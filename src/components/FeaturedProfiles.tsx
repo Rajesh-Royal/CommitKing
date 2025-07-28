@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Flame, Snowflake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { githubAPI } from "@/lib/github";
+import Image from "next/image";
 
 interface LeaderboardEntry {
   id: string;
@@ -37,7 +38,7 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
     queryKey: ['featured-profiles', leaderboard],
     queryFn: async () => {
       if (!leaderboard || leaderboard.length === 0) return [];
-      
+
       const top3 = leaderboard.slice(0, 3);
       const profiles = await Promise.all(
         top3.map(async (entry) => {
@@ -116,10 +117,10 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
           🏆 Top Rated Developers
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {displayProfiles?.map((profile, index) => (
-            <Card 
+            <Card
               key={profile.username}
               className="hover:shadow-lg transition-shadow cursor-pointer relative"
               onClick={() => onProfileSelect(profile.username)}
@@ -131,14 +132,12 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
               )}
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-4">
-                  <img
+                  <Image
                     src={profile.avatar_url}
                     alt={`${profile.username}'s avatar`}
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full border-2 border-gray-200 dark:border-gray-600"
-                    onError={(e) => {
-                      // Fallback to GitHub default avatar
-                      e.currentTarget.src = `https://github.com/${profile.username}.png`;
-                    }}
                   />
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -149,7 +148,7 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex space-x-4">
                     <span className="flex items-center text-orange-500">
@@ -165,7 +164,7 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
                     Rate →
                   </Button>
                 </div>
-                
+
                 {index < 3 && (
                   <div className="mt-3 text-center">
                     <Badge variant={index === 0 ? "default" : "secondary"} className="text-xs">

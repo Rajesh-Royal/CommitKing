@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createContext, useContext, useEffect, useState } from "react";
-import type { User } from "@shared/schema";
+import type { User } from "@/shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
 interface AuthContextType {

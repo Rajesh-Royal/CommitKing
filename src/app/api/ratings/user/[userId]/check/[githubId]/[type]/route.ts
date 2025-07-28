@@ -3,10 +3,10 @@ import { storage } from "@/lib/storage";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string; githubId: string; type: string } }
+  { params }: { params: Promise<{ userId: string; githubId: string; type: string }> }
 ) {
   try {
-    const { userId, githubId, type } = params;
+    const { userId, githubId, type } = await params;
     const rating = await storage.getRating(userId, githubId, type);
     return NextResponse.json({ 
       hasRated: !!rating, 
