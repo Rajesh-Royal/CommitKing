@@ -130,6 +130,7 @@ export const githubAPI = new GitHubAPI();
 // Priority lists from PRD
 export const PRIORITY_PROFILES = [
   'Rajesh-Royal',
+  'aidenybai',
   'mazeincoding',
   'ahmetskilinc',
   'nizzyabi',

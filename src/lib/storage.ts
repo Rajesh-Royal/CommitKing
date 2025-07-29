@@ -142,9 +142,15 @@ export class DbStorage implements IStorage {
 
   private async updateRatingCounts(githubId: string, type: string): Promise<void> {
     const counts = await this.getRatingCounts(githubId, type);
+    
+    // Get user data to populate username and avatar_url
+    const user = await this.getUserByGithubId(githubId);
+    
     await this.updateLeaderboardCache(githubId, type, {
       github_id: githubId,
       type,
+      username: user?.username,
+      avatar_url: user?.avatar_url,
       hotty_count: counts.hotty,
       notty_count: counts.notty,
     });
