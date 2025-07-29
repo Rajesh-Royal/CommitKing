@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Allow important pages
+Allow: /waitlist
+Allow: /auth/callback
+Allow: /api/waitlist
+
+# Disallow admin and private API routes
+Disallow: /api/admin/
+Disallow: /api/auth/
+Disallow: /_next/
+Disallow: /api/priority/
+Disallow: /api/ratings/
+Disallow: /api/users/
+
+# Crawl delay
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://commitkings.com/sitemap.xml
