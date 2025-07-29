@@ -1,78 +1,29 @@
 'use client';
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Github, Mail, Users, Crown, Rocket, Star } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Github, Users, Crown, Rocket, Star } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { signInWithGitHub } from "@/lib/supabase";
+import Image from "next/image";
 
 export default function WaitlistPage() {
-  const [email, setEmail] = useState("");
-  const [githubUsername, setGithubUsername] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isJoined, setIsJoined] = useState(false);
-  const [position, setPosition] = useState<number | null>(null);
+  const { user, logout } = useAuth();
   const { toast } = useToast();
 
-  // Get current waitlist count
-  const { data: waitlistData } = useQuery({
-    queryKey: ['waitlist-count'],
-    queryFn: async () => {
-      const response = await fetch('/api/waitlist');
-      if (!response.ok) throw new Error('Failed to fetch waitlist count');
-      return response.json();
-    },
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email) {
-      toast({
-        title: "Email required",
-        description: "Please enter your email address",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  const handleGitHubAuth = async () => {
     try {
-      const response = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          github_username: githubUsername || null,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to join waitlist');
-      }
-
-      setIsJoined(true);
-      setPosition(data.position);
-      toast({
-        title: "Welcome to the waitlist! 🎉",
-        description: `You're #${data.position} on the list. We'll notify you when we launch!`,
-      });
+      await signInWithGitHub();
+      // The user will be redirected to GitHub OAuth and then back to /auth/callback
     } catch (error) {
+      console.error('GitHub auth error:', error);
       toast({
-        title: "Failed to join waitlist",
-        description: error instanceof Error ? error.message : "Please try again later",
+        title: "Authentication failed",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -147,89 +98,83 @@ export default function WaitlistPage() {
           </Card>
         </div>
 
-        {/* Waitlist Form */}
+        {/* Login/Profile Section */}
         <Card className="max-w-md mx-auto">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-              {isJoined ? "You're on the list! 🎉" : "Join the Waitlist"}
+              {user ? "Welcome to CommitKings! 👋" : "Join CommitKings"}
             </CardTitle>
-            {waitlistData && (
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
-                <Users className="w-4 h-4 inline mr-1" />
-                {waitlistData.count} developers waiting
-              </p>
-            )}
+            <p className="text-gray-600 dark:text-gray-300 text-sm">
+              {user ? "You're all set for the launch!" : "Sign in with GitHub to get notified when we launch"}
+            </p>
           </CardHeader>
           <CardContent>
-            {isJoined ? (
+            {user ? (
               <div className="text-center space-y-4">
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <p className="text-green-800 dark:text-green-200 font-medium">
-                    You&apos;re #{position} on the waitlist!
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+                  <div className="flex items-center justify-center mb-4">
+                    <Image
+                      src={user.avatar_url || ''}
+                      alt={user.username}
+                      width={64}
+                      height={64}
+                      className="rounded-full border-2 border-green-200 dark:border-green-600"
+                    />
+                  </div>
+                  <p className="text-green-800 dark:text-green-200 font-medium text-lg">
+                    Welcome, {user.username}! 🎉
                   </p>
-                  <p className="text-green-600 dark:text-green-300 text-sm mt-1">
-                    We&apos;ll email you as soon as we launch.
+                  <p className="text-green-600 dark:text-green-300 text-sm mt-2">
+                    You&apos;re registered for CommitKings. We&apos;ll email you as soon as we launch!
                   </p>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  Want to help us spread the word? Share CommitKings with your developer friends!
+                <div className="pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const { signOut } = await import('@/lib/supabase');
+                        await signOut();
+                        logout();
+                        toast({
+                          title: "Signed out",
+                          description: "You have been successfully signed out.",
+                        });
+                      } catch (error) {
+                        console.error('Logout error:', error);
+                        logout(); // Fallback to local logout
+                        toast({
+                          title: "Signed out",
+                          description: "You have been signed out.",
+                        });
+                      }
+                    }}
+                    className="w-full cursor-pointer"
+                  >
+                    Sign out
+                  </Button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email Address *
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="github" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    GitHub Username (optional)
-                  </label>
-                  <div className="relative">
-                    <Github className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      id="github"
-                      type="text"
-                      placeholder="your-username"
-                      value={githubUsername}
-                      onChange={(e) => setGithubUsername(e.target.value)}
-                      className="w-full pl-10"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    We&apos;ll prioritize developers who share their GitHub username
+              <div className="text-center space-y-4">
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-6">
+                  <Github className="w-12 h-12 text-indigo-600 dark:text-indigo-400 mx-auto mb-4" />
+                  <p className="text-indigo-800 dark:text-indigo-200 font-medium">
+                    Ready to join the community?
+                  </p>
+                  <p className="text-indigo-600 dark:text-indigo-300 text-sm mt-2">
+                    Connect with GitHub to get early access when we launch!
                   </p>
                 </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-                  disabled={isSubmitting}
+                <Button
+                  onClick={handleGitHubAuth}
+                  className="w-full bg-indigo-900 hover:bg-indigo-800 text-white flex items-center justify-center cursor-pointer"
                 >
-                  {isSubmitting ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Joining...
-                    </div>
-                  ) : (
-                    <div className="flex items-center">
-                      <Mail className="w-4 h-4 mr-2" />
-                      Join Waitlist
-                    </div>
-                  )}
+                  <Github className="w-4 h-4 mr-2" />
+                  Sign in with GitHub
                 </Button>
-              </form>
+              </div>
             )}
           </CardContent>
         </Card>
