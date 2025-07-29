@@ -33,12 +33,17 @@ export default function WaitlistPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-6">
-            <Github className="text-4xl text-indigo-600 dark:text-indigo-400 mr-3" />
+            <Image
+              src="/web-app-manifest-512x512.png"
+              alt="CommitKings Logo"
+              width={64}
+              height={64}
+              className="mr-3" />
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
               CommitKings
             </h1>
           </div>
-          
+
           <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium">
             <Rocket className="w-4 h-4 mr-2" />
             Coming Soon
@@ -48,7 +53,7 @@ export default function WaitlistPage() {
             Rate GitHub Profiles & Repositories
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Discover amazing developers and repositories. Join the waitlist to be among the first to explore 
+            Discover amazing developers and repositories. Join the waitlist to be among the first to explore
             the ultimate community-driven showcase of GitHub talent!
           </p>
         </div>

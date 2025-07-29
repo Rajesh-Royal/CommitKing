@@ -6,6 +6,8 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow access to waitlist page, API routes, static assets, and auth callback
+  // Allow access to waitlist page, API routes, static assets, auth callback, and media files
+  const mediaExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.mp4', '.mp3', '.webm', '.ogg', '.wav', '.mov', '.avi'];
   if (
     pathname === '/waitlist' ||
     pathname.startsWith('/api/') ||
@@ -13,6 +15,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/public/') ||
     pathname === '/auth/callback' ||
+    mediaExtensions.some(ext => pathname.toLowerCase().endsWith(ext)) ||
     isAppLive
   ) {
     return NextResponse.next();
