@@ -1,15 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/contexts/AuthContext";
-import { githubAPI } from "@/lib/github";
 import { Github, Home, Trophy, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { signInWithGitHub } from "@/lib/supabase";
+import Image from "next/image";
+import { ThemeToggle } from "./ui/theme-toggle";
 
 export function Navigation() {
-  const { user, login, logout } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const { toast } = useToast();
 
@@ -36,7 +36,12 @@ export function Navigation() {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <Github className="text-2xl text-indigo-600 dark:text-indigo-400 mr-2" />
+              <Image
+                src="/web-app-manifest-512x512.png"
+                alt="CommitKings Logo"
+                width={50}
+                height={50}
+                className="mr-3" />
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 CommitKings
               </h1>
@@ -48,11 +53,10 @@ export function Navigation() {
             <Link href="/">
               <Button
                 variant="ghost"
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive('/') 
-                    ? 'text-gray-900 dark:text-white' 
+                className={`px-3 py-2 text-sm font-medium transition-colors ${isActive('/')
+                    ? 'text-gray-900 dark:text-white'
                     : 'text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
-                }`}
+                  }`}
               >
                 <Home className="w-4 h-4 mr-1" />
                 Home
@@ -61,11 +65,10 @@ export function Navigation() {
             <Link href="/leaderboard">
               <Button
                 variant="ghost"
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive('/leaderboard') 
-                    ? 'text-gray-900 dark:text-white' 
+                className={`px-3 py-2 text-sm font-medium transition-colors ${isActive('/leaderboard')
+                    ? 'text-gray-900 dark:text-white'
                     : 'text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
-                }`}
+                  }`}
               >
                 <Trophy className="w-4 h-4 mr-1" />
                 Leaderboard
@@ -75,11 +78,10 @@ export function Navigation() {
               <Link href="/dashboard">
                 <Button
                   variant="ghost"
-                  className={`px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive('/dashboard') 
-                      ? 'text-gray-900 dark:text-white' 
+                  className={`px-3 py-2 text-sm font-medium transition-colors ${isActive('/dashboard')
+                      ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
-                  }`}
+                    }`}
                 >
                   <User className="w-4 h-4 mr-1" />
                   Dashboard
@@ -91,12 +93,14 @@ export function Navigation() {
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
             <ThemeToggle />
-            
+
             {user ? (
               <div className="flex items-center space-x-3">
-                <img
-                  src={user.avatar_url || ''}
+                <Image
+                  src={user.avatar_url || '/default-avatar.png'}
                   alt={user.username}
+                  width={32}
+                  height={32}
                   className="w-8 h-8 rounded-full"
                 />
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
