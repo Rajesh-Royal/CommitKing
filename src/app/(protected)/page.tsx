@@ -7,37 +7,29 @@ import { ProfileCard } from "@/components/ProfileCard";
 import { RatingButtons } from "@/components/RatingButtons";
 import { SearchToggle } from "@/components/SearchToggle";
 import { FeaturedProfiles } from "@/components/FeaturedProfiles";
-import { githubAPI, PRIORITY_PROFILES, PRIORITY_REPOS } from "@/lib/github";
+import { githubAPI } from "@/lib/github";
 import { SkipForward } from "lucide-react";
 import Image from "next/image";
+import { useItemQueue } from "@/hooks/useItemQueue";
 
 export default function HomePage() {
-  const [currentItem, setCurrentItem] = useState<{
-    type: 'profile' | 'repo';
-    id: string;
-  } | null>(null);
+  const {
+    currentItem,
+    isTransitioning,
+    initializeQueue,
+    transitionToNext,
+    setSpecificItem,
+    loadNextItem,
+  } = useItemQueue();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Get random priority item on initial load
+  // Initialize queue on mount
   useEffect(() => {
-    loadRandomItem();
-  }, []);
-
-  const loadRandomItem = () => {
-    // Randomly choose between profile and repo
-    const type = Math.random() > 0.5 ? 'profile' : 'repo';
-    
-    if (type === 'profile') {
-      const randomProfile = PRIORITY_PROFILES[Math.floor(Math.random() * PRIORITY_PROFILES.length)];
-      setCurrentItem({ type: 'profile', id: randomProfile });
-    } else {
-      const randomRepo = PRIORITY_REPOS[Math.floor(Math.random() * PRIORITY_REPOS.length)];
-      setCurrentItem({ type: 'repo', id: randomRepo });
-    }
-  };
+    initializeQueue();
+  }, [initializeQueue]);
 
   // Fetch current item data
   const { data: profileData, isLoading: profileLoading } = useQuery({
@@ -89,20 +81,20 @@ export default function HomePage() {
   };
 
   const handleProfileSelect = (username: string) => {
-    setCurrentItem({ type: 'profile', id: username });
+    setSpecificItem({ type: 'profile', id: username });
     setSearchResults([]);
   };
 
   const handleRated = () => {
-    // Load next random item after rating
-    setTimeout(loadRandomItem, 1000);
+    // Optimistically transition to next item immediately with minimal delay for smooth UX
+    transitionToNext(150);
   };
 
   const handleSkip = () => {
-    loadRandomItem();
+    transitionToNext(200);
   };
 
-  const isLoading = profileLoading || repoLoading;
+  const isLoading = (profileLoading || repoLoading) && !isTransitioning;
   const totalContributions = contributions?.reduce((sum, day) => sum + day.count, 0) || 0;
 
   return (
@@ -135,10 +127,10 @@ export default function HomePage() {
                 onClick={() => {
                   if (result.login) {
                     // Profile result
-                    setCurrentItem({ type: 'profile', id: result.login });
+                    setSpecificItem({ type: 'profile', id: result.login });
                   } else {
                     // Repo result
-                    setCurrentItem({ type: 'repo', id: result.full_name });
+                    setSpecificItem({ type: 'repo', id: result.full_name });
                   }
                   setSearchResults([]);
                 }}
@@ -173,7 +165,11 @@ export default function HomePage() {
             <div className="text-gray-500 dark:text-gray-400">Loading...</div>
           </div>
         ) : currentItem ? (
-          <div className="max-w-4xl mx-auto">
+          <div 
+            className={`max-w-4xl mx-auto transition-all duration-150 ${
+              isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
+            }`}
+          >
             <ProfileCard
               profile={profileData || undefined}
               repository={repoData || undefined}
@@ -185,12 +181,14 @@ export default function HomePage() {
               githubId={currentItem.type === 'profile' ? profileData?.id?.toString() || '' : repoData?.id?.toString() || ''}
               type={currentItem.type}
               onRated={handleRated}
+              disabled={isTransitioning}
             />
             <div className="text-center mt-4">
               <Button
                 variant="ghost"
                 onClick={handleSkip}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-sm font-medium transition-colors"
+                disabled={isTransitioning}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-sm font-medium transition-colors disabled:opacity-50"
               >
                 <SkipForward className="w-4 h-4 mr-1" />
                 Skip this {currentItem.type}
@@ -202,7 +200,7 @@ export default function HomePage() {
             <div className="text-gray-500 dark:text-gray-400">
               Click &quot;Load Random&quot; to start rating!
             </div>
-            <Button onClick={loadRandomItem} className="mt-4">
+            <Button onClick={loadNextItem} className="mt-4">
               Load Random Profile/Repo
             </Button>
           </div>

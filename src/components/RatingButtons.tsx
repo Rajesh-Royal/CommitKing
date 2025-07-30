@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -9,9 +8,10 @@ interface RatingButtonsProps {
   githubId: string;
   type: 'profile' | 'repo';
   onRated?: () => void;
+  disabled?: boolean;
 }
 
-export function RatingButtons({ githubId, type, onRated }: RatingButtonsProps) {
+export function RatingButtons({ githubId, type, onRated, disabled = false }: RatingButtonsProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -39,25 +39,51 @@ export function RatingButtons({ githubId, type, onRated }: RatingButtonsProps) {
         rating,
       });
     },
-    onSuccess: () => {
-      // Invalidate and refetch relevant queries
-      queryClient.invalidateQueries({ queryKey: ['/api/ratings', githubId, type, 'counts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/ratings/user', user?.id, 'check', githubId, type] });
-      queryClient.invalidateQueries({ queryKey: ['/api/leaderboard'] });
+    onMutate: async (rating) => {
+      // Optimistic update for rating counts
+      await queryClient.cancelQueries({ queryKey: ['/api/ratings', githubId, type, 'counts'] });
       
-      toast({
-        title: "Rating submitted!",
-        description: "Thank you for your rating.",
+      const previousCounts = queryClient.getQueryData<{hotty: number; notty: number}>(['/api/ratings', githubId, type, 'counts']);
+      
+      if (previousCounts) {
+        const newCounts = {
+          hotty: rating === 'hotty' ? previousCounts.hotty + 1 : previousCounts.hotty,
+          notty: rating === 'notty' ? previousCounts.notty + 1 : previousCounts.notty,
+        };
+        
+        queryClient.setQueryData(['/api/ratings', githubId, type, 'counts'], newCounts);
+      }
+      
+      // Optimistic update for user rating
+      queryClient.setQueryData(['/api/ratings/user', user?.id, 'check', githubId, type], {
+        hasRated: true,
+        rating,
       });
       
-      onRated?.();
+      return { previousCounts };
     },
-    onError: (error: any) => {
+    onError: (error: Error, variables, context) => {
+      // Rollback optimistic updates on error
+      if (context?.previousCounts) {
+        queryClient.setQueryData(['/api/ratings', githubId, type, 'counts'], context.previousCounts);
+      }
+      queryClient.setQueryData(['/api/ratings/user', user?.id, 'check', githubId, type], {
+        hasRated: false,
+      });
+      
       toast({
         title: "Rating failed",
         description: error.message || "Failed to submit rating",
         variant: "destructive",
       });
+    },
+    onSuccess: () => {
+      // Invalidate and refetch relevant queries silently
+      queryClient.invalidateQueries({ queryKey: ['/api/ratings', githubId, type, 'counts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ratings/user', user?.id, 'check', githubId, type] });
+      queryClient.invalidateQueries({ queryKey: ['/api/leaderboard'] });
+      
+      // No toast needed since user has already moved on to next item
     },
   });
 
@@ -80,10 +106,14 @@ export function RatingButtons({ githubId, type, onRated }: RatingButtonsProps) {
       return;
     }
 
+    // Call onRated immediately for optimistic transition
+    onRated?.();
+    
+    // Then submit the rating in the background
     ratingMutation.mutate(rating);
   };
 
-  const isDisabled = !user || userRating?.hasRated || ratingMutation.isPending;
+  const isDisabled = !user || userRating?.hasRated || ratingMutation.isPending || disabled;
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-6">
