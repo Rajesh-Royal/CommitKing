@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { githubAPI } from '@/lib/github';
 import { useGitHubErrorHandler } from './useGitHubErrorHandler';
 import { useSmartPrefetch } from './useSmartPrefetch';
+import { debugLog } from '@/utils/debugLog';
 
 export type ItemType = 'profile' | 'repo';
 
@@ -74,6 +75,8 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     try {
       if (type === 'profile') {
         // Generate random profile
+        debugLog.api.start('user lookup (fallback)', { method: 'random_username' });
+        
         const characters = 'abcdefghijklmnopqrstuvwxyz';
         const randomChar = characters[Math.floor(Math.random() * characters.length)];
         const randomLength = Math.floor(Math.random() * 3) + 3; // 3-5 characters
@@ -86,20 +89,36 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
 
         const profile = await githubAPI.getUser(username);
         if (profile) {
+          debugLog.api.success('user lookup (fallback)', 1);
           return {
             type: 'profile',
             id: profile.login,
             data: profile,
           };
+        } else {
+          debugLog.api.error('user lookup (fallback)', 'User not found');
         }
       } else {
-        // Generate random repository
-        const topics = ['javascript', 'python', 'react', 'nodejs', 'typescript', 'go', 'rust', 'java', 'php', 'ruby'];
-        const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+        const topics = ['javascript', 'typescript', 'react', 'nextjs', 'nodejs', 'python'];
+        const topicsQuery = `topic:${topics[Math.floor(Math.random() * topics.length)]}`;
+        const fullQuery = `(${topicsQuery}) stars:>100`;
         
-        const repos = await githubAPI.searchRepos(`topic:${randomTopic}`, 1);
+        debugLog.api.start('search/repositories (fallback)', { 
+          query: fullQuery, 
+          sort: 'stars', 
+          per_page: 10 
+        });
+        
+        const repos = await githubAPI.searchRepos(fullQuery, 1, 10);
         if (repos?.items && repos.items.length > 0) {
-          const randomRepo = repos.items[Math.floor(Math.random() * repos.items.length)];
+          // Sort by stars (highest first) and pick random from top results
+          const sortedRepos = repos.items.sort((a, b) => 
+            (b.stargazers_count || 0) - (a.stargazers_count || 0)
+          );
+          const randomRepo = sortedRepos[Math.floor(Math.random() * sortedRepos.length)];
+          
+          debugLog.api.success('search/repositories (fallback)', sortedRepos.length);
+          
           return {
             type: 'repo',
             id: randomRepo.full_name,
@@ -131,9 +150,12 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
         // Get random item from cache
         const randomItem = cachedItems[Math.floor(Math.random() * cachedItems.length)];
         
+        debugLog.cache.hit(type, cachedItems.length);
+        
         // Trigger background prefetch if cache is getting low
         const totalCached = getCachedItemsCount();
-        if (totalCached < 3) {
+        if (totalCached < 5) {
+          debugLog.info(`Cache running low (${totalCached} items), triggering prefetch`);
           prefetchBatch();
         }
         
@@ -144,6 +166,7 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
         };
       }
 
+      debugLog.cache.miss(type, 'empty cache');
       // Fallback to generating random item via API
       return await generateRandomItem(type);
     } catch (error) {
@@ -193,17 +216,20 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
 
   // Initialize queue
   const initializeQueue = useCallback(async () => {
+    debugLog.queue.init(itemType, queueSize);
     setIsLoading(true);
     const initialQueue = await fillQueue();
     setQueue(initialQueue);
     setCurrentItem(initialQueue[0] || null);
+    debugLog.queue.init(itemType, initialQueue.length);
     setIsLoading(false);
-  }, [fillQueue]);
+  }, [fillQueue, itemType, queueSize]);
 
   // Initialize queue on mount or when itemType changes
   useEffect(() => {
+    debugLog.queue.switch('previous', itemType);
     initializeQueue();
-  }, [initializeQueue]);
+  }, [initializeQueue, itemType]);
 
   // Move to next item with transition
   const transitionToNext = useCallback(async (delay = 150) => {

@@ -79,17 +79,18 @@ class GitHubAPI {
     return this.fetchWithAuth(`${GITHUB_API_BASE}/repos/${owner}/${repo}`);
   }
 
-  async searchUsers(query: string, page = 1): Promise<{ items: GitHubUser[] }> {
-    return this.fetchWithAuth(`${GITHUB_API_BASE}/search/users?q=${encodeURIComponent(query)}&page=${page}&per_page=10`);
+  async searchUsers(query: string, page = 1, perPage = 10): Promise<{ items: GitHubUser[] }> {
+    return this.fetchWithAuth(`${GITHUB_API_BASE}/search/users?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}&sort=followers&order=desc`);
   }
 
-  async searchRepos(query: string, page = 1): Promise<{ items: GitHubRepo[] }> {
-    return this.fetchWithAuth(`${GITHUB_API_BASE}/search/repositories?q=${encodeURIComponent(query)}&page=${page}&per_page=10`);
+  async searchRepos(query: string, page = 1, perPage = 10): Promise<{ items: GitHubRepo[] }> {
+    return this.fetchWithAuth(`${GITHUB_API_BASE}/search/repositories?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}&sort=stars&order=desc`);
   }
 
   // Generate contribution graph data (simplified version)
   // In production, this would use GitHub's GraphQL API or scrape the contributions
-  generateContributionData(username: string): ContributionDay[] {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  generateContributionData(_username: string): ContributionDay[] {
     const contributions: ContributionDay[] = [];
     const today = new Date();
     
