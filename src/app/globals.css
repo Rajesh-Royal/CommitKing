@@ -45,16 +45,6 @@
   --color-sidebar-border: #e5e5e5;
   --color-sidebar-ring: #171717;
   
-  /* Border radius */
-  --radius: 0.5rem;
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
-  
-  /* Fonts */
-  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  
   /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
@@ -100,11 +90,19 @@
   --color-sidebar-ring: #d4d4d8;
 }
 
+@layer base {
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+}
+
 /* Keyframes for animations */
 @keyframes accordion-down {
   from {
     height: 0;
   }
+
   to {
     height: var(--radix-accordion-content-height);
   }
@@ -114,6 +112,7 @@
   from {
     height: var(--radix-accordion-content-height);
   }
+
   to {
     height: 0;
   }

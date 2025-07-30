@@ -9,6 +9,7 @@ import { SearchToggle } from "@/components/SearchToggle";
 import { FeaturedProfiles } from "@/components/FeaturedProfiles";
 import { githubAPI, PRIORITY_PROFILES, PRIORITY_REPOS } from "@/lib/github";
 import { SkipForward } from "lucide-react";
+import Image from "next/image";
 
 export default function HomePage() {
   const [currentItem, setCurrentItem] = useState<{
@@ -143,9 +144,11 @@ export default function HomePage() {
                 }}
               >
                 <div className="flex items-center space-x-3">
-                  <img
+                  <Image
                     src={result.avatar_url || result.owner?.avatar_url}
                     alt="Avatar"
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full"
                   />
                   <div>
@@ -164,7 +167,7 @@ export default function HomePage() {
       )}
 
       {/* Rating Interface */}
-      <section className="mb-12">
+      <div className="mb-12 min-h-[600px]">
         {isLoading ? (
           <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">Loading...</div>
@@ -204,7 +207,7 @@ export default function HomePage() {
             </Button>
           </div>
         )}
-      </section>
+      </div>
 
       {/* Featured Profiles */}
       <FeaturedProfiles onProfileSelect={handleProfileSelect} />
