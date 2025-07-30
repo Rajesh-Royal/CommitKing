@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { githubAPI } from '@/lib/github';
 import { useGitHubErrorHandler } from './useGitHubErrorHandler';
+import { useSmartPrefetch } from './useSmartPrefetch';
 
 export type ItemType = 'profile' | 'repo';
 
@@ -61,8 +63,13 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
   const [currentItem, setCurrentItem] = useState<QueueItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { handleGitHubError } = useGitHubErrorHandler();
+  const queryClient = useQueryClient();
+  const { prefetchBatch, getCachedItemsCount } = useSmartPrefetch({ 
+    type: itemType,
+    enabled: true 
+  });
 
-  // Generate a random GitHub username or repository
+  // Generate a random GitHub username or repository (fallback method)
   const generateRandomItem = useCallback(async (type: ItemType): Promise<QueueItem | null> => {
     try {
       if (type === 'profile') {
@@ -106,6 +113,45 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     return null;
   }, [handleGitHubError]);
 
+  // Get random item from cache or API
+  const getRandomItemFromCache = useCallback(async (type: ItemType): Promise<QueueItem | null> => {
+    try {
+      // First, try to get from cache
+      const queryPattern = type === 'repo' ? 'github-random-repos' : 'github-random-profiles';
+      const queries = queryClient.getQueriesData({ 
+        queryKey: [queryPattern],
+      });
+
+      // Flatten all cached data
+      const cachedItems = queries
+        .flatMap(([, data]) => Array.isArray(data) ? data : [])
+        .filter(Boolean);
+
+      if (cachedItems.length > 0) {
+        // Get random item from cache
+        const randomItem = cachedItems[Math.floor(Math.random() * cachedItems.length)];
+        
+        // Trigger background prefetch if cache is getting low
+        const totalCached = getCachedItemsCount();
+        if (totalCached < 10) {
+          prefetchBatch();
+        }
+        
+        return {
+          type,
+          id: type === 'profile' ? randomItem.login : randomItem.full_name,
+          data: randomItem,
+        };
+      }
+
+      // Fallback to generating random item via API
+      return await generateRandomItem(type);
+    } catch (error) {
+      handleGitHubError(error);
+      return null;
+    }
+  }, [queryClient, getCachedItemsCount, prefetchBatch, handleGitHubError, generateRandomItem]);
+
   // Preload item data
   const preloadItemData = useCallback(async (item: QueueItem): Promise<QueueItem> => {
     try {
@@ -135,7 +181,7 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     const newQueue: QueueItem[] = [];
     
     for (let i = 0; i < queueSize; i++) {
-      const item = await generateRandomItem(itemType);
+      const item = await getRandomItemFromCache(itemType);
       if (item) {
         const preloadedItem = await preloadItemData(item);
         newQueue.push(preloadedItem);
@@ -143,7 +189,7 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     }
     
     return newQueue;
-  }, [queueSize, itemType, generateRandomItem, preloadItemData]);
+  }, [queueSize, itemType, getRandomItemFromCache, preloadItemData]);
 
   // Initialize queue
   const initializeQueue = useCallback(async () => {
@@ -171,7 +217,7 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
       
       // If we should preload next item, add one to the end
       if (preloadNext && newQueue.length < queueSize) {
-        const newItem = await generateRandomItem(itemType);
+        const newItem = await getRandomItemFromCache(itemType);
         if (newItem) {
           const preloadedItem = await preloadItemData(newItem);
           newQueue.push(preloadedItem);
@@ -182,7 +228,7 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
       setCurrentItem(newQueue[0] || null);
       setIsTransitioning(false);
     }, delay);
-  }, [queue, queueSize, preloadNext, itemType, generateRandomItem, preloadItemData]);
+  }, [queue, queueSize, preloadNext, itemType, getRandomItemFromCache, preloadItemData]);
 
   // Move to next item without transition (original nextItem)
   const nextItem = useCallback(async () => {
@@ -192,7 +238,7 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     
     // If we should preload next item, add one to the end
     if (preloadNext && newQueue.length < queueSize) {
-      const newItem = await generateRandomItem(itemType);
+      const newItem = await getRandomItemFromCache(itemType);
       if (newItem) {
         const preloadedItem = await preloadItemData(newItem);
         newQueue.push(preloadedItem);
@@ -201,7 +247,7 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     
     setQueue(newQueue);
     setCurrentItem(newQueue[0] || null);
-  }, [queue, queueSize, preloadNext, itemType, generateRandomItem, preloadItemData]);
+  }, [queue, queueSize, preloadNext, itemType, getRandomItemFromCache, preloadItemData]);
 
   // Set a specific item
   const setSpecificItem = useCallback((item: { type: ItemType; id: string }) => {

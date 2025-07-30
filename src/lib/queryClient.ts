@@ -1,4 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { persistQueryClient } from '@tanstack/query-persist-client-core';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -47,7 +49,8 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      staleTime: 60 * 60 * 1000, // 1 hour for GitHub data (changed from Infinity)
+      gcTime: 24 * 60 * 60 * 1000, // 24 hours
       retry: false,
     },
     mutations: {
@@ -55,3 +58,20 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Create persister for localStorage
+const localStoragePersister = createSyncStoragePersister({
+  storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+  key: 'hot-or-not-cache',
+  serialize: JSON.stringify,
+  deserialize: JSON.parse,
+});
+
+// Setup persistence (only on client side)
+if (typeof window !== 'undefined') {
+  persistQueryClient({
+    queryClient,
+    persister: localStoragePersister,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+}
