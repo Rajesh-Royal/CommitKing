@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
     mediaExtensions.some(ext => pathname.toLowerCase().endsWith(ext)) ||
     isAppLive
   ) {
-    if(pathname.includes('/waitlist')) return NextResponse.redirect(new URL('/', request.url));
+    // if(pathname.includes('/waitlist')) return NextResponse.redirect(new URL('/', request.url));
     return NextResponse.next();
   }
 
