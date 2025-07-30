@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { persistQueryClient } from '@tanstack/query-persist-client-core';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -60,7 +60,7 @@ export const queryClient = new QueryClient({
 });
 
 // Create persister for localStorage
-const localStoragePersister = createSyncStoragePersister({
+const localStoragePersister = createAsyncStoragePersister({
   storage: typeof window !== 'undefined' ? window.localStorage : undefined,
   key: 'hot-or-not-cache',
   serialize: JSON.stringify,

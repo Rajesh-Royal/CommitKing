@@ -133,7 +133,7 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
         
         // Trigger background prefetch if cache is getting low
         const totalCached = getCachedItemsCount();
-        if (totalCached < 10) {
+        if (totalCached < 3) {
           prefetchBatch();
         }
         
