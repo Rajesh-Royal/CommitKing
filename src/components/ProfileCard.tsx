@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ExternalLink, MapPin, Users, Code } from "lucide-react";
 import { ContributionGraph } from "./ContributionGraph";
+import Image from "next/image";
 
 interface Profile {
   id: number;
@@ -35,6 +35,7 @@ interface Repository {
 interface ProfileCardProps {
   profile?: Profile;
   repository?: Repository;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contributions?: any[];
   totalContributions?: number;
   type: 'profile' | 'repo';
@@ -54,9 +55,11 @@ export function ProfileCard({
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <img
+             <Image
                 src={profile.avatar_url}
                 alt={`${profile.login}'s avatar`}
+                width={64}
+                height={64}
                 className="w-16 h-16 rounded-full border-2 border-gray-200 dark:border-gray-600"
               />
               <div>
@@ -120,9 +123,11 @@ export function ProfileCard({
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <img
+             <Image
                 src={repository.owner.avatar_url}
                 alt={`${repository.owner.login}'s avatar`}
+                width={64}
+                height={64}
                 className="w-16 h-16 rounded-full border-2 border-gray-200 dark:border-gray-600"
               />
               <div>

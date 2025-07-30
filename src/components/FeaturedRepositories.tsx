@@ -68,7 +68,7 @@ export function FeaturedRepositories({ onRepositorySelect }: FeaturedRepositorie
               name: repo,
               owner: {
                 login: owner,
-                avatar_url: entry.owner_avatar_url || `https://github.com/${owner}.png`,
+                avatar_url: entry.owner_avatar_url || `https://avatars.githubusercontent.com/u/${entry.github_id}?v=4`,
               },
               description: 'Popular GitHub Repository',
               stargazers_count: 0,
