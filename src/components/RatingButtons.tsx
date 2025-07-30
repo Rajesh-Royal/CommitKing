@@ -16,11 +16,11 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get rating counts
-  const { data: counts } = useQuery<{hotty: number; notty: number}>({
-    queryKey: ['/api/ratings', githubId, type, 'counts'],
-    enabled: !!githubId,
-  });
+  // Get rating counts - DISABLED for performance
+  // const { data: counts } = useQuery<{hotty: number; notty: number}>({
+  //   queryKey: ['/api/ratings', githubId, type, 'counts'],
+  //   enabled: !!githubId,
+  // });
 
   // Check if user has already rated
   const { data: userRating } = useQuery<{hasRated: boolean; rating?: string}>({
@@ -40,33 +40,14 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
       });
     },
     onMutate: async (rating) => {
-      // Optimistic update for rating counts
-      await queryClient.cancelQueries({ queryKey: ['/api/ratings', githubId, type, 'counts'] });
-      
-      const previousCounts = queryClient.getQueryData<{hotty: number; notty: number}>(['/api/ratings', githubId, type, 'counts']);
-      
-      if (previousCounts) {
-        const newCounts = {
-          hotty: rating === 'hotty' ? previousCounts.hotty + 1 : previousCounts.hotty,
-          notty: rating === 'notty' ? previousCounts.notty + 1 : previousCounts.notty,
-        };
-        
-        queryClient.setQueryData(['/api/ratings', githubId, type, 'counts'], newCounts);
-      }
-      
-      // Optimistic update for user rating
+      // Optimistic update for user rating only (no counts)
       queryClient.setQueryData(['/api/ratings/user', user?.id, 'check', githubId, type], {
         hasRated: true,
         rating,
       });
-      
-      return { previousCounts };
     },
-    onError: (error: Error, variables, context) => {
+    onError: (error: Error) => {
       // Rollback optimistic updates on error
-      if (context?.previousCounts) {
-        queryClient.setQueryData(['/api/ratings', githubId, type, 'counts'], context.previousCounts);
-      }
       queryClient.setQueryData(['/api/ratings/user', user?.id, 'check', githubId, type], {
         hasRated: false,
       });
@@ -78,8 +59,7 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
       });
     },
     onSuccess: () => {
-      // Invalidate and refetch relevant queries silently
-      queryClient.invalidateQueries({ queryKey: ['/api/ratings', githubId, type, 'counts'] });
+      // Invalidate and refetch relevant queries silently (no counts API)
       queryClient.invalidateQueries({ queryKey: ['/api/ratings/user', user?.id, 'check', githubId, type] });
       queryClient.invalidateQueries({ queryKey: ['/api/leaderboard'] });
       
@@ -125,9 +105,6 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
         >
           <span className="text-2xl mr-3">🧊</span>
           <span>Notty</span>
-          <div className="ml-3 text-sm opacity-75">
-            {counts?.notty || 0}
-          </div>
         </Button>
         
         <Button
@@ -137,9 +114,6 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
         >
           <span className="text-2xl mr-3">🔥</span>
           <span>Hotty</span>
-          <div className="ml-3 text-sm opacity-75">
-            {counts?.hotty || 0}
-          </div>
         </Button>
       </div>
       
