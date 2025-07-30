@@ -7,6 +7,8 @@ import { ProfileCard } from "@/components/ProfileCard";
 import { RatingButtons } from "@/components/RatingButtons";
 import { SearchToggle } from "@/components/SearchToggle";
 import { FeaturedProfiles } from "@/components/FeaturedProfiles";
+import { FeaturedRepositories } from "@/components/FeaturedRepositories";
+import { TabSelector } from "@/components/TabSelector";
 import { githubAPI } from "@/lib/github";
 import { SkipForward } from "lucide-react";
 import Image from "next/image";
@@ -14,6 +16,7 @@ import { useItemQueue } from "@/hooks/useItemQueue";
 import { useGitHubErrorHandler } from "@/hooks/useGitHubErrorHandler";
 
 export default function HomePage() {
+  const [activeTab, setActiveTab] = useState<'profile' | 'repo'>('profile');
   const {
     currentItem,
     isTransitioning,
@@ -21,7 +24,7 @@ export default function HomePage() {
     transitionToNext,
     setSpecificItem,
     loadNextItem,
-  } = useItemQueue();
+  } = useItemQueue({ itemType: activeTab === 'profile' ? 'profile' : 'repo' });
 
   const { handleGitHubError } = useGitHubErrorHandler();
 
@@ -29,10 +32,18 @@ export default function HomePage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Initialize queue on mount
+  // Initialize queue on mount and when tab changes
   useEffect(() => {
     initializeQueue();
-  }, [initializeQueue]);
+  }, [initializeQueue, activeTab]);
+
+  const handleTabChange = (tab: 'profile' | 'repo') => {
+    setActiveTab(tab);
+  };
+
+  const handleRepositorySelect = (fullName: string) => {
+    setSpecificItem({ type: 'repo', id: fullName });
+  };
 
   // Fetch current item data
   const { data: profileData, isLoading: profileLoading } = useQuery({
@@ -180,8 +191,13 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* Tab Selector */}
+      <div className="flex justify-center mb-8">
+        <TabSelector activeTab={activeTab} onTabChange={handleTabChange} />
+      </div>
+
       {/* Rating Interface */}
-      <div className="mb-12 min-h-[550px]">
+      <div className="mb-12" style={{minHeight: 550}}>
         {isLoading ? (
           <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">Loading...</div>
@@ -229,8 +245,12 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Featured Profiles */}
-      <FeaturedProfiles onProfileSelect={handleProfileSelect} />
+      {/* Featured Content */}
+      {activeTab === 'profile' ? (
+        <FeaturedProfiles onProfileSelect={handleProfileSelect} />
+      ) : (
+        <FeaturedRepositories onRepositorySelect={handleRepositorySelect} />
+      )}
     </main>
   );
 }

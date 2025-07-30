@@ -126,7 +126,7 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
               onClick={() => onProfileSelect(profile.username)}
             >
               {index === 0 && (
-                <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                <div className="absolute -top-2 -right-2 bg-gray-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
                   👑
                 </div>
               )}
