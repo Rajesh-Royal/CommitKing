@@ -46,7 +46,26 @@ class GitHubAPI {
     });
 
     if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+      // Parse error response to get detailed GitHub error info
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = {};
+      }
+
+      // Create error object with GitHub-specific properties
+      const error = new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`) as Error & {
+        status: number;
+        documentation_url?: string;
+      };
+      
+      error.status = response.status;
+      if (errorData.documentation_url) {
+        error.documentation_url = errorData.documentation_url;
+      }
+
+      throw error;
     }
 
     return response.json();

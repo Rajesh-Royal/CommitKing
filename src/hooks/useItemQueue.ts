@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { githubAPI, PRIORITY_PROFILES, PRIORITY_REPOS } from '@/lib/github';
+import { useGitHubErrorHandler } from '@/hooks/useGitHubErrorHandler';
 
 export interface QueueItem {
   type: 'profile' | 'repo';
@@ -13,6 +14,7 @@ export function useItemQueue() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   
   const queryClient = useQueryClient();
+  const { handleGitHubError } = useGitHubErrorHandler();
 
   // Helper function to generate a random item
   const generateRandomItem = useCallback((): QueueItem => {
@@ -33,14 +35,28 @@ export function useItemQueue() {
       // Prefetch profile data
       queryClient.prefetchQuery({
         queryKey: ['github-profile', item.id],
-        queryFn: () => githubAPI.getUser(item.id),
+        queryFn: async () => {
+          try {
+            return await githubAPI.getUser(item.id);
+          } catch (error) {
+            handleGitHubError(error);
+            return null;
+          }
+        },
         staleTime: 5 * 60 * 1000, // Cache for 5 minutes
       });
       
       // Prefetch contributions
       queryClient.prefetchQuery({
         queryKey: ['github-contributions', item.id],
-        queryFn: () => githubAPI.getContributions(item.id),
+        queryFn: async () => {
+          try {
+            return await githubAPI.getContributions(item.id);
+          } catch (error) {
+            handleGitHubError(error);
+            return [];
+          }
+        },
         staleTime: 5 * 60 * 1000,
       });
     } else {
@@ -48,11 +64,18 @@ export function useItemQueue() {
       const [owner, repo] = item.id.split('/');
       queryClient.prefetchQuery({
         queryKey: ['github-repo', item.id],
-        queryFn: () => githubAPI.getRepo(owner, repo),
+        queryFn: async () => {
+          try {
+            return await githubAPI.getRepo(owner, repo);
+          } catch (error) {
+            handleGitHubError(error);
+            return null;
+          }
+        },
         staleTime: 5 * 60 * 1000,
       });
     }
-  }, [queryClient]);
+  }, [queryClient, handleGitHubError]);
 
   // Load next item from queue
   const loadNextItem = useCallback(() => {

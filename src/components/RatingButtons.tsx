@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Loader } from "lucide-react";
 
 interface RatingButtonsProps {
   githubId: string;
@@ -23,7 +24,7 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
   // });
 
   // Check if user has already rated
-  const { data: userRating } = useQuery<{hasRated: boolean; rating?: string}>({
+  const { data: userRating, isFetching: isFetchingUserRating } = useQuery<{hasRated: boolean; rating?: string}>({
     queryKey: ['/api/ratings/user', user?.id, 'check', githubId, type],
     enabled: !!user && !!githubId,
   });
@@ -61,7 +62,8 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
     onSuccess: () => {
       // Invalidate and refetch relevant queries silently (no counts API)
       queryClient.invalidateQueries({ queryKey: ['/api/ratings/user', user?.id, 'check', githubId, type] });
-      queryClient.invalidateQueries({ queryKey: ['/api/leaderboard'] });
+      // Not required, as it will increase the load on the server
+      // queryClient.invalidateQueries({ queryKey: ['/api/leaderboard'] });
       
       // No toast needed since user has already moved on to next item
     },
@@ -97,6 +99,7 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-6">
+      <Loader className={`animate-spin repeat-infinite mx-auto -mt-4 ${isFetchingUserRating ? 'block' : 'hidden'}`}/>
       <div className="flex justify-center space-x-8">
         <Button
           onClick={() => handleRating('notty')}

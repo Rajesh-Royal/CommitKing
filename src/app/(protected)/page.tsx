@@ -11,6 +11,7 @@ import { githubAPI } from "@/lib/github";
 import { SkipForward } from "lucide-react";
 import Image from "next/image";
 import { useItemQueue } from "@/hooks/useItemQueue";
+import { useGitHubErrorHandler } from "@/hooks/useGitHubErrorHandler";
 
 export default function HomePage() {
   const {
@@ -21,6 +22,8 @@ export default function HomePage() {
     setSpecificItem,
     loadNextItem,
   } = useItemQueue();
+
+  const { handleGitHubError } = useGitHubErrorHandler();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -36,7 +39,12 @@ export default function HomePage() {
     queryKey: ['github-profile', currentItem?.id],
     queryFn: async () => {
       if (!currentItem || currentItem.type !== 'profile') return null;
-      return githubAPI.getUser(currentItem.id);
+      try {
+        return await githubAPI.getUser(currentItem.id);
+      } catch (error) {
+        handleGitHubError(error);
+        return null;
+      }
     },
     enabled: currentItem?.type === 'profile',
   });
@@ -45,8 +53,13 @@ export default function HomePage() {
     queryKey: ['github-repo', currentItem?.id],
     queryFn: async () => {
       if (!currentItem || currentItem.type !== 'repo') return null;
-      const [owner, repo] = currentItem.id.split('/');
-      return githubAPI.getRepo(owner, repo);
+      try {
+        const [owner, repo] = currentItem.id.split('/');
+        return await githubAPI.getRepo(owner, repo);
+      } catch (error) {
+        handleGitHubError(error);
+        return null;
+      }
     },
     enabled: currentItem?.type === 'repo',
   });
@@ -55,7 +68,12 @@ export default function HomePage() {
     queryKey: ['github-contributions', currentItem?.id],
     queryFn: async () => {
       if (!currentItem || currentItem.type !== 'profile') return [];
-      return githubAPI.getContributions(currentItem.id);
+      try {
+        return await githubAPI.getContributions(currentItem.id);
+      } catch (error) {
+        handleGitHubError(error);
+        return [];
+      }
     },
     enabled: currentItem?.type === 'profile',
   });
@@ -73,7 +91,11 @@ export default function HomePage() {
       }
       setSearchResults(results);
     } catch (error) {
-      console.error('Search failed:', error);
+      // Use our centralized GitHub error handler
+      const handled = handleGitHubError(error);
+      if (!handled) {
+        console.error('Search failed:', error);
+      }
       setSearchResults([]);
     } finally {
       setIsSearching(false);

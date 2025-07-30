@@ -56,7 +56,7 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
             // Fallback if GitHub API fails
             return {
               username: entry.github_id,
-              avatar_url: entry.avatar_url || `https://github.com/${entry.github_id}.png`,
+              avatar_url: entry.avatar_url || `https://avatars.githubusercontent.com/u/${entry.github_id}?v=4`,
               bio: 'GitHub Developer',
               hotty_count: entry.hotty_count,
               notty_count: entry.notty_count,
