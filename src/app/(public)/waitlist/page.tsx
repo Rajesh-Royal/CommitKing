@@ -8,6 +8,7 @@ import { Github, Users, Crown, Rocket, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { signInWithGitHub } from "@/lib/supabase";
 import Image from "next/image";
+import { OpenSourceAlert } from "@/components/OpenSourceAlert";
 
 export default function WaitlistPage() {
   const { user, logout } = useAuth();
@@ -46,15 +47,14 @@ export default function WaitlistPage() {
 
           <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium">
             <Rocket className="w-4 h-4 mr-2" />
-            Coming Soon
+            Join the Launch
           </Badge>
 
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Rate GitHub Profiles & Repositories
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Discover amazing developers and repositories. Join the waitlist to be among the first to explore
-            the ultimate community-driven showcase of GitHub talent!
+            Discover amazing developers and repositories. Join CommitKings now to help build the ultimate community-driven showcase of GitHub talent!
           </p>
         </div>
 
@@ -104,7 +104,7 @@ export default function WaitlistPage() {
         </div>
 
         {/* Login/Profile Section */}
-        <Card className="max-w-md mx-auto">
+        <Card className="max-w-md mx-auto mb-12">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
               {user ? "Welcome to CommitKings! 👋" : "Join CommitKings"}
@@ -163,18 +163,17 @@ export default function WaitlistPage() {
               </div>
             ) : (
               <div className="text-center space-y-4">
-                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-6">
-                  <Github className="w-12 h-12 text-indigo-600 dark:text-indigo-400 mx-auto mb-4" />
-                  <p className="text-indigo-800 dark:text-indigo-200 font-medium">
+                <div className="border border-primary-200 dark:border-primary-800 rounded-lg p-6">
+                  <Github className="w-12 h-12 text-primary-600 dark:text-primary-400 mx-auto mb-4" />
+                  <p className="text-primary-800 dark:text-primary-200 font-medium">
                     Ready to join the community?
                   </p>
-                  <p className="text-indigo-600 dark:text-indigo-300 text-sm mt-2">
+                  <p className="text-primary-600 dark:text-primary-300 text-sm mt-2">
                     Connect with GitHub to get early access when we launch!
                   </p>
                 </div>
                 <Button
                   onClick={handleGitHubAuth}
-                  className="w-full bg-indigo-900 hover:bg-indigo-800 text-white flex items-center justify-center cursor-pointer"
                 >
                   <Github className="w-4 h-4 mr-2" />
                   Sign in with GitHub
@@ -183,10 +182,10 @@ export default function WaitlistPage() {
             )}
           </CardContent>
         </Card>
-
+        <OpenSourceAlert />
         {/* Footer */}
-        <div className="text-center mt-12 text-sm text-gray-500 dark:text-gray-400">
-          <p>Built with ❤️ for the developer community</p>
+        <div className="text-center mt-12 text-sm text-gray-800 dark:text-gray-300">
+          <p>Built with <span className="text-red-500">❤️</span> for the developer community</p>
           <p className="mt-2">No spam, just launch notifications and updates</p>
         </div>
       </div>

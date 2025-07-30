@@ -133,8 +133,8 @@ export function Navigation() {
               </div>
             ) : (
               <Button
+              variant="default"
                 onClick={handleGitHubAuth}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-colors"
               >
                 <Github className="w-4 h-4 mr-2" />
                 Sign in with GitHub
