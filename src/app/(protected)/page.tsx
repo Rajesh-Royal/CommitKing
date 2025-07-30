@@ -167,7 +167,7 @@ export default function HomePage() {
       )}
 
       {/* Rating Interface */}
-      <div className="mb-12 min-h-[600px]">
+      <div className="mb-12 min-h-[550px]">
         {isLoading ? (
           <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">Loading...</div>
