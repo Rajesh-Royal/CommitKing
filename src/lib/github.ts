@@ -59,7 +59,7 @@ class GitHubAPI {
         status: number;
         documentation_url?: string;
       };
-      
+
       error.status = response.status;
       if (errorData.documentation_url) {
         error.documentation_url = errorData.documentation_url;
@@ -93,23 +93,23 @@ class GitHubAPI {
   generateContributionData(_username: string): ContributionDay[] {
     const contributions: ContributionDay[] = [];
     const today = new Date();
-    
+
     // Generate 365 days of contribution data
     for (let i = 364; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
-      
+
       // Generate realistic contribution patterns
       const dayOfWeek = date.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      
+
       // Lower activity on weekends
       const baseActivity = isWeekend ? 0.3 : 0.7;
       const randomFactor = Math.random();
-      
+
       let count = 0;
       let level = 0;
-      
+
       if (randomFactor < baseActivity) {
         // Generate contribution count with realistic distribution
         const intensity = Math.random();
@@ -127,14 +127,14 @@ class GitHubAPI {
           level = 4;
         }
       }
-      
+
       contributions.push({
         date: date.toISOString().split('T')[0],
         count,
         level,
       });
     }
-    
+
     return contributions;
   }
 
@@ -176,6 +176,17 @@ export const PRIORITY_PROFILES = [
   'San-77x',
   'simonorzel26',
   'ayush18pop',
+  'taqui-786',
+  'joschan21',
+  'AntonioErdeljac',
+  'adrianhajdin',
+  'payloadcms',
+  'shadcn',
+  'OpenPipe',
+  'vinta',
+  'kentcdodds',
+  'Balastrong',
+  'tannerlinsley',
 ];
 
 export const PRIORITY_REPOS = [
@@ -186,11 +197,22 @@ export const PRIORITY_REPOS = [
   't3-oss/create-t3-app',
   'StarKnightt/prasendev',
   'twitter/the-algorithm',
+  'saadeghi/daisyui',
+  'TanStack/query',
   'twitter/twemoji',
   'TabbyML/Tabby',
   'DIYgod/RSSHub',
   'imputnet/cobalt',
   'FFmpeg/FFmpeg',
   'yt-dlp/yt-dlp',
+  'shadcn-ui/ui',
   'Tyrrrz/YoutubeDownloader',
+  'taqui-786/Portfolio',
+  'joschan21/digitalhippo',
+  'AntonioErdeljac/next13-discord-clone',
+  'adrianhajdin/ecommerce',
+  'payloadcms/payload',
+  'shadcn/taxonomy',
+  'OpenPipe/ART',
+  'vinta/awesome-python',
 ];

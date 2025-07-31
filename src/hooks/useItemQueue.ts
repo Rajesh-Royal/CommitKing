@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { githubAPI, PRIORITY_PROFILES, PRIORITY_REPOS } from '@/lib/github';
 import { useGitHubErrorHandler } from './useGitHubErrorHandler';
 import { useSmartPrefetch } from './useSmartPrefetch';
+import { useRatingCache } from './useRatingCache';
 import { debugLog } from '@/utils/debugLog';
 import { preloadGitHubAvatar } from '@/utils/imageUtils';
 
@@ -64,7 +65,17 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [currentItem, setCurrentItem] = useState<QueueItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  // Track already-shown items to prevent duplicates
+  const [shownItems, setShownItems] = useState<Set<string>>(new Set());
+  
+  // Prevent infinite re-initialization
+  const isInitialized = useRef(false);
+  const currentItemType = useRef(itemType);
+  
   const { handleGitHubError } = useGitHubErrorHandler();
+  const { getRating, setRating, hasRating, clearCache } = useRatingCache();
   const queryClient = useQueryClient();
   const { prefetchBatch, getCachedItemsCount } = useSmartPrefetch({ 
     type: itemType,
@@ -72,11 +83,10 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
   });
 
   // Get random item from priority lists (fallback method)
-  const getRandomPriorityItem = useCallback(async (type: ItemType): Promise<QueueItem | null> => {
+  const getRandomPriorityItem = useCallback(async (type: ItemType, specificId?: string): Promise<QueueItem | null> => {
     try {
       const priorityList = type === 'profile' ? PRIORITY_PROFILES : PRIORITY_REPOS;
-      const shuffled = [...priorityList].sort(() => Math.random() - 0.5);
-      const selectedId = shuffled[0];
+      const selectedId = specificId || priorityList[Math.floor(Math.random() * priorityList.length)];
       
       debugLog.api.start(`${type} from priority list`, { id: selectedId });
       
@@ -110,15 +120,32 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     try {
       // First, try to get from cache
       const priorityList = type === 'profile' ? PRIORITY_PROFILES : PRIORITY_REPOS;
-      const shuffled = [...priorityList].sort(() => Math.random() - 0.5);
       
-      // Try to find cached items from priority list
+      // Get current shown items to avoid stale closure
+      const currentShownItems = shownItems;
+      
+      // Filter out already-shown items
+      let availableItems = priorityList.filter(id => !currentShownItems.has(id));
+      
+      // If all items have been shown, reset the tracking and use full list
+      if (availableItems.length === 0) {
+        debugLog.info(`All ${type}s shown, resetting tracking`);
+        setShownItems(new Set());
+        availableItems = [...priorityList]; // Create new array instead of mutating
+      }
+      
+      const shuffled = [...availableItems].sort(() => Math.random() - 0.5);
+      
+      // Try to find cached items from available priority list
       for (const id of shuffled) {
         const queryKey = type === 'profile' ? ['github-profile', id] : ['github-repo', id];
         const cachedData = queryClient.getQueryData(queryKey);
         
         if (cachedData) {
           debugLog.cache.hit(type, 1);
+          
+          // Mark this item as shown
+          setShownItems(prev => new Set([...prev, id]));
           
           // Trigger background prefetch if cache is getting low
           const totalCached = getCachedItemsCount();
@@ -136,13 +163,19 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
       }
 
       debugLog.cache.miss(type, 'no cached priority items');
-      // Fallback to fetching from priority list
-      return await getRandomPriorityItem(type);
+      // Fallback to fetching from priority list (first available item)
+      const selectedId = shuffled[0];
+      if (selectedId) {
+        setShownItems(prev => new Set([...prev, selectedId]));
+        return await getRandomPriorityItem(type, selectedId);
+      }
+      
+      return null;
     } catch (error) {
       handleGitHubError(error);
       return null;
     }
-  }, [queryClient, getCachedItemsCount, prefetchBatch, handleGitHubError, getRandomPriorityItem]);
+  }, [queryClient, getCachedItemsCount, prefetchBatch, handleGitHubError, getRandomPriorityItem, shownItems]);
 
   // Preload item data
   const preloadItemData = useCallback(async (item: QueueItem): Promise<QueueItem> => {
@@ -166,8 +199,6 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     return item;
   }, [handleGitHubError]);
 
-  const [isTransitioning, setIsTransitioning] = useState(false);
-
   // Fill the queue with random items
   const fillQueue = useCallback(async () => {
     const newQueue: QueueItem[] = [];
@@ -183,22 +214,44 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     return newQueue;
   }, [queueSize, itemType, getRandomItemFromCache, preloadItemData]);
 
-  // Initialize queue
+  // Initialize queue - FIXED: Stable function to prevent infinite re-renders
   const initializeQueue = useCallback(async () => {
+    if (isInitialized.current && currentItemType.current === itemType) {
+      return; // Prevent duplicate initialization
+    }
+    
     debugLog.queue.init(itemType, queueSize);
     setIsLoading(true);
-    const initialQueue = await fillQueue();
-    setQueue(initialQueue);
-    setCurrentItem(initialQueue[0] || null);
-    debugLog.queue.init(itemType, initialQueue.length);
-    setIsLoading(false);
-  }, [fillQueue, itemType, queueSize]);
+    
+    try {
+      const initialQueue = await fillQueue();
+      setQueue(initialQueue);
+      setCurrentItem(initialQueue[0] || null);
+      debugLog.queue.init(itemType, initialQueue.length);
+      
+      isInitialized.current = true;
+      currentItemType.current = itemType;
+    } catch (error) {
+      debugLog.api.error('queue initialization', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [itemType, queueSize, fillQueue]);
 
-  // Initialize queue on mount or when itemType changes
+  // FIXED: Only initialize once and when itemType actually changes
   useEffect(() => {
-    debugLog.queue.switch('previous', itemType);
-    initializeQueue();
-  }, [initializeQueue, itemType]);
+    // Reset tracking when itemType changes
+    if (currentItemType.current !== itemType) {
+      debugLog.queue.switch(currentItemType.current, itemType);
+      setShownItems(new Set());
+      isInitialized.current = false;
+    }
+    
+    // Initialize only if not already initialized
+    if (!isInitialized.current) {
+      initializeQueue();
+    }
+  }, [itemType, initializeQueue]);
 
   // Move to next item with transition
   const transitionToNext = useCallback(async (delay = 150) => {
@@ -223,7 +276,7 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
       setCurrentItem(newQueue[0] || null);
       setIsTransitioning(false);
     }, delay);
-  }, [queue, queueSize, preloadNext, itemType, getRandomItemFromCache, preloadItemData]);
+  }, [queue, queueSize, preloadNext, itemType, getRandomItemFromCache, preloadItemData, setIsTransitioning]);
 
   // Move to next item without transition (original nextItem)
   const nextItem = useCallback(async () => {
@@ -293,6 +346,31 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     }
   }, [queue, preloadNextAvatar]);
 
+  // Handle rating submission with caching
+  const submitRating = useCallback(async (itemId: string, rating: 'hotty' | 'notty') => {
+    if (!currentItem) return;
+    
+    try {
+      // Cache the rating immediately for instant feedback
+      setRating(currentItem.type, itemId, rating);
+      
+      // TODO: Make actual API call to submit rating
+      // await ratingAPI.submitRating(currentItem.type, itemId, rating);
+      
+      debugLog.info(`Submitted rating: ${rating} for ${currentItem.type}:${itemId}`);
+    } catch (error) {
+      // If API call fails, you might want to remove from cache
+      // For now, we'll keep it cached as the user expressed their preference
+      handleGitHubError(error);
+    }
+  }, [currentItem, setRating, handleGitHubError]);
+
+  // Clear rating cache (useful for logout)
+  const clearRatingCache = useCallback(() => {
+    clearCache();
+    debugLog.info('Rating cache cleared');
+  }, [clearCache]);
+
   return {
     currentItem,
     nextItems: getNextItems(),
@@ -304,5 +382,10 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     transitionToNext,
     setSpecificItem,
     loadNextItem,
+    // Rating cache functions
+    getRating,
+    hasRating,
+    submitRating,
+    clearRatingCache,
   };
 }
