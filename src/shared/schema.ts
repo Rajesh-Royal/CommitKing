@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+// TODO: add username and avatar_url to ratings table
+
 export const ratings = pgTable("ratings", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   user_id: uuid("user_id").references(() => users.id).notNull(),
