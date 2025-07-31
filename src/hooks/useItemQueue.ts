@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { githubAPI } from '@/lib/github';
+import { githubAPI, PRIORITY_PROFILES, PRIORITY_REPOS } from '@/lib/github';
 import { useGitHubErrorHandler } from './useGitHubErrorHandler';
 import { useSmartPrefetch } from './useSmartPrefetch';
 import { debugLog } from '@/utils/debugLog';
@@ -70,110 +70,78 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     enabled: true 
   });
 
-  // Generate a random GitHub username or repository (fallback method)
-  const generateRandomItem = useCallback(async (type: ItemType): Promise<QueueItem | null> => {
+  // Get random item from priority lists (fallback method)
+  const getRandomPriorityItem = useCallback(async (type: ItemType): Promise<QueueItem | null> => {
     try {
+      const priorityList = type === 'profile' ? PRIORITY_PROFILES : PRIORITY_REPOS;
+      const shuffled = [...priorityList].sort(() => Math.random() - 0.5);
+      const selectedId = shuffled[0];
+      
+      debugLog.api.start(`${type} from priority list`, { id: selectedId });
+      
       if (type === 'profile') {
-        // Generate random profile
-        debugLog.api.start('user lookup (fallback)', { method: 'random_username' });
-        
-        const characters = 'abcdefghijklmnopqrstuvwxyz';
-        const randomChar = characters[Math.floor(Math.random() * characters.length)];
-        const randomLength = Math.floor(Math.random() * 3) + 3; // 3-5 characters
-        let username = randomChar;
-        
-        for (let i = 1; i < randomLength; i++) {
-          const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-          username += chars[Math.floor(Math.random() * chars.length)];
-        }
-
-        const profile = await githubAPI.getUser(username);
-        if (profile) {
-          debugLog.api.success('user lookup (fallback)', 1);
-          return {
-            type: 'profile',
-            id: profile.login,
-            data: profile,
-          };
-        } else {
-          debugLog.api.error('user lookup (fallback)', 'User not found');
-        }
+        const profile = await githubAPI.getUser(selectedId);
+        debugLog.api.success(`${type} from priority list`, 1);
+        return {
+          type: 'profile',
+          id: selectedId,
+          data: profile,
+        };
       } else {
-        const topics = ['javascript', 'typescript', 'react', 'nextjs', 'nodejs', 'python'];
-        const topicsQuery = `topic:${topics[Math.floor(Math.random() * topics.length)]}`;
-        const fullQuery = `(${topicsQuery}) stars:>100`;
-        
-        debugLog.api.start('search/repositories (fallback)', { 
-          query: fullQuery, 
-          sort: 'stars', 
-          per_page: 10 
-        });
-        
-        const repos = await githubAPI.searchRepos(fullQuery, 1, 10);
-        if (repos?.items && repos.items.length > 0) {
-          // Sort by stars (highest first) and pick random from top results
-          const sortedRepos = repos.items.sort((a, b) => 
-            (b.stargazers_count || 0) - (a.stargazers_count || 0)
-          );
-          const randomRepo = sortedRepos[Math.floor(Math.random() * sortedRepos.length)];
-          
-          debugLog.api.success('search/repositories (fallback)', sortedRepos.length);
-          
-          return {
-            type: 'repo',
-            id: randomRepo.full_name,
-            data: randomRepo,
-          };
-        }
+        const [owner, repo] = selectedId.split('/');
+        const repository = await githubAPI.getRepo(owner, repo);
+        debugLog.api.success(`${type} from priority list`, 1);
+        return {
+          type: 'repo',
+          id: selectedId,
+          data: repository,
+        };
       }
     } catch (error) {
+      debugLog.api.error(`${type} from priority list`, error);
       handleGitHubError(error);
     }
     return null;
   }, [handleGitHubError]);
 
-  // Get random item from cache or API
+  // Get random item from cache or priority list
   const getRandomItemFromCache = useCallback(async (type: ItemType): Promise<QueueItem | null> => {
     try {
       // First, try to get from cache
-      const queryPattern = type === 'repo' ? 'github-random-repos' : 'github-random-profiles';
-      const queries = queryClient.getQueriesData({ 
-        queryKey: [queryPattern],
-      });
-
-      // Flatten all cached data
-      const cachedItems = queries
-        .flatMap(([, data]) => Array.isArray(data) ? data : [])
-        .filter(Boolean);
-
-      if (cachedItems.length > 0) {
-        // Get random item from cache
-        const randomItem = cachedItems[Math.floor(Math.random() * cachedItems.length)];
+      const priorityList = type === 'profile' ? PRIORITY_PROFILES : PRIORITY_REPOS;
+      const shuffled = [...priorityList].sort(() => Math.random() - 0.5);
+      
+      // Try to find cached items from priority list
+      for (const id of shuffled) {
+        const queryKey = type === 'profile' ? ['github-profile', id] : ['github-repo', id];
+        const cachedData = queryClient.getQueryData(queryKey);
         
-        debugLog.cache.hit(type, cachedItems.length);
-        
-        // Trigger background prefetch if cache is getting low
-        const totalCached = getCachedItemsCount();
-        if (totalCached < 5) {
-          debugLog.info(`Cache running low (${totalCached} items), triggering prefetch`);
-          prefetchBatch();
+        if (cachedData) {
+          debugLog.cache.hit(type, 1);
+          
+          // Trigger background prefetch if cache is getting low
+          const totalCached = getCachedItemsCount();
+          if (totalCached < 5) {
+            debugLog.info(`Cache running low (${totalCached} items), triggering prefetch`);
+            prefetchBatch();
+          }
+          
+          return {
+            type,
+            id: id,
+            data: cachedData as GitHubUser | GitHubRepo,
+          };
         }
-        
-        return {
-          type,
-          id: type === 'profile' ? randomItem.login : randomItem.full_name,
-          data: randomItem,
-        };
       }
 
-      debugLog.cache.miss(type, 'empty cache');
-      // Fallback to generating random item via API
-      return await generateRandomItem(type);
+      debugLog.cache.miss(type, 'no cached priority items');
+      // Fallback to fetching from priority list
+      return await getRandomPriorityItem(type);
     } catch (error) {
       handleGitHubError(error);
       return null;
     }
-  }, [queryClient, getCachedItemsCount, prefetchBatch, handleGitHubError, generateRandomItem]);
+  }, [queryClient, getCachedItemsCount, prefetchBatch, handleGitHubError, getRandomPriorityItem]);
 
   // Preload item data
   const preloadItemData = useCallback(async (item: QueueItem): Promise<QueueItem> => {

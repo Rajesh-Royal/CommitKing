@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { githubAPI } from '@/lib/github';
+import { githubAPI, PRIORITY_PROFILES, PRIORITY_REPOS } from '@/lib/github';
 import { useEffect, useCallback } from 'react';
 import { debugLog } from '@/utils/debugLog';
 
@@ -11,73 +11,68 @@ interface UseSmartPrefetchOptions {
 export function useSmartPrefetch({ type, enabled = true }: UseSmartPrefetchOptions) {
   const queryClient = useQueryClient();
 
-  // Prefetch random items in background
+  const prefetchProfile = useCallback(async (username: string) => {
+    try {
+      await queryClient.prefetchQuery({
+        queryKey: ['github-profile', username],
+        queryFn: () => githubAPI.getUser(username),
+        staleTime: 1000 * 60 * 60 * 24, // 24 hours
+      });
+      debugLog.api.success(`profile/${username}`, 1);
+    } catch (error) {
+      debugLog.api.error(`profile/${username}`, error);
+    }
+  }, [queryClient]);
+
+  const prefetchRepository = useCallback(async (username: string, repo: string) => {
+    try {
+      await queryClient.prefetchQuery({
+        queryKey: ['github-repo', username, repo],
+        queryFn: () => githubAPI.getRepo(username, repo),
+        staleTime: 1000 * 60 * 60 * 24, // 24 hours
+      });
+      debugLog.api.success(`repo/${username}/${repo}`, 1);
+    } catch (error) {
+      debugLog.api.error(`repo/${username}/${repo}`, error);
+    }
+  }, [queryClient]);
+
+  // Prefetch priority items based on type
   const prefetchBatch = useCallback(async () => {
     if (!enabled) return;
 
-    debugLog.cache.prefetch(type, type === 'repo' ? 20 : 30);
+    debugLog.cache.prefetch(type, type === 'repo' ? PRIORITY_REPOS.length : PRIORITY_PROFILES.length);
 
     try {
       if (type === 'repo') {
-        // Fetch repositories for multiple topics in a single query
-        const topics = ['javascript', 'typescript', 'react', 'nextjs', 'nodejs', 'python'];
-        const topicsQuery = `topic:${topics[Math.floor(Math.random() * topics.length)]}`;
-        const fullQuery = `(${topicsQuery}) stars:>100`;
-
-        debugLog.api.start('search/repositories', {
-          query: fullQuery,
-          sort: 'stars',
-          per_page: 20
-        });
-
-        const queryKey = ['github-random-repos', 'multi-topic', Math.floor(Date.now() / (60 * 1000))];
-
-        await queryClient.prefetchQuery({
-          queryKey,
-          queryFn: async () => {
-            const repos = await githubAPI.searchRepos(fullQuery, 1, 20);
-
-            // Sort by stars (highest first) - GitHub API should already do this, but ensure it
-            const sortedRepos = (repos.items || []).sort((a, b) =>
-              (b.stargazers_count || 0) - (a.stargazers_count || 0)
-            );
-
-            debugLog.api.success('search/repositories', sortedRepos.length);
-            return sortedRepos;
-          },
-          staleTime: 60 * 60 * 1000, // 1 hour
-        });
+        // Prefetch a subset of priority repositories
+        const reposToPrefix = PRIORITY_REPOS.slice(0, 8); // Prefetch first 8 repos
+        debugLog.api.start(`Prefetching ${reposToPrefix.length} priority repositories`);
+        
+        for (const repoPath of reposToPrefix) {
+          const [username, repo] = repoPath.split('/');
+          await prefetchRepository(username, repo);
+          // Small delay to be respectful to the API
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
       } else {
-        // Prefetch user profiles
-        debugLog.api.start('search/users', {
-          query: 'followers:>100+type:user',
-          sort: 'followers',
-          per_page: 30
-        });
-
-        const queryKey = ['github-random-profiles', Math.floor(Date.now() / (60 * 1000))];
-
-        await queryClient.prefetchQuery({
-          queryKey,
-          queryFn: async () => {
-            const users = await githubAPI.searchUsers(
-              'followers:>100+type:user',
-              Math.floor(Math.random() * 10) + 1,
-              30
-            );
-
-            debugLog.api.success('search/users', users.items?.length || 0);
-            return users.items || [];
-          },
-          staleTime: 60 * 60 * 1000, // 1 hour
-        });
+        // Prefetch a subset of priority profiles
+        const profilesToPrefetch = PRIORITY_PROFILES.slice(0, 12); // Prefetch first 12 profiles
+        debugLog.api.start(`Prefetching ${profilesToPrefetch.length} priority profiles`);
+        
+        for (const username of profilesToPrefetch) {
+          await prefetchProfile(username);
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
       }
+      
+      debugLog.api.success(`priority-${type}-prefetch`, type === 'repo' ? 8 : 12);
     } catch (error) {
       debugLog.api.error(`prefetch-${type}`, error);
     }
-  }, [type, queryClient, enabled]);
+  }, [type, enabled, prefetchProfile, prefetchRepository]);
 
-  // Auto-prefetch on mount and when cache is low
+  // Auto-prefetch on mount
   useEffect(() => {
     if (!enabled) return;
 
@@ -88,20 +83,28 @@ export function useSmartPrefetch({ type, enabled = true }: UseSmartPrefetchOptio
     return () => clearTimeout(prefetchTimer);
   }, [type, enabled, prefetchBatch]);
 
-  // Get cached items count
+  // Get cached items count for priority items
   const getCachedItemsCount = useCallback(() => {
-    const queryPattern = type === 'repo' ? 'github-random-repos' : 'github-random-profiles';
-    const queries = queryClient.getQueriesData({
-      queryKey: [queryPattern],
-    });
-
-    return queries.reduce((total, [, data]) => {
-      return total + (Array.isArray(data) ? data.length : 0);
-    }, 0);
+    if (type === 'repo') {
+      // Count cached repositories from priority list
+      return PRIORITY_REPOS.reduce((count, repoPath) => {
+        const [username, repo] = repoPath.split('/');
+        const queryData = queryClient.getQueryData(['github-repo', username, repo]);
+        return queryData ? count + 1 : count;
+      }, 0);
+    } else {
+      // Count cached profiles from priority list
+      return PRIORITY_PROFILES.reduce((count, username) => {
+        const queryData = queryClient.getQueryData(['github-profile', username]);
+        return queryData ? count + 1 : count;
+      }, 0);
+    }
   }, [type, queryClient]);
 
   return {
     prefetchBatch,
     getCachedItemsCount,
+    prefetchProfile,
+    prefetchRepository,
   };
 }
