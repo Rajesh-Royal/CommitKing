@@ -4,6 +4,7 @@ import { githubAPI, PRIORITY_PROFILES, PRIORITY_REPOS } from '@/lib/github';
 import { useGitHubErrorHandler } from './useGitHubErrorHandler';
 import { useSmartPrefetch } from './useSmartPrefetch';
 import { debugLog } from '@/utils/debugLog';
+import { preloadGitHubAvatar } from '@/utils/imageUtils';
 
 export type ItemType = 'profile' | 'repo';
 
@@ -265,16 +266,21 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
 
   // Preload next avatar for smoother transitions
   const preloadNextAvatar = useCallback((nextItem: QueueItem) => {
-    if (nextItem?.data) {
-      const img = new Image();
+    if (nextItem.data) {
+      let avatarUrl: string | undefined;
       
       // Handle both profile and repo avatars
       if ('avatar_url' in nextItem.data) {
         // User profile
-        img.src = nextItem.data.avatar_url;
+        avatarUrl = nextItem.data.avatar_url;
       } else if ('owner' in nextItem.data && nextItem.data.owner?.avatar_url) {
         // Repository owner avatar
-        img.src = nextItem.data.owner.avatar_url;
+        avatarUrl = nextItem.data.owner.avatar_url;
+      }
+      
+      if (avatarUrl) {
+        debugLog.cache.prefetch('avatar', 1);
+        preloadGitHubAvatar(avatarUrl, 96); // Preload at xl size for best quality
       }
     }
   }, []);

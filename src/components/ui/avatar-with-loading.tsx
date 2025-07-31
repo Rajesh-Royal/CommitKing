@@ -81,6 +81,29 @@ export function AvatarWithLoading({
     return name.slice(0, 2).toUpperCase();
   }
 
+  // Get optimized image size for GitHub avatars
+  const getImageSize = () => {
+    switch (size) {
+      case 'sm': return 32;
+      case 'md': return 48;
+      case 'lg': return 64;
+      case 'xl': return 96;
+      default: return 48;
+    }
+  };
+
+  // Create optimized GitHub avatar URL
+  const getOptimizedSrc = () => {
+    if (src.includes('avatars.githubusercontent.com')) {
+      const baseUrl = src.split('?')[0];
+      const imageSize = getImageSize();
+      return `${baseUrl}?s=${imageSize}&v=4`;
+    }
+    return src;
+  };
+
+  const optimizedSrc = getOptimizedSrc();
+
   // Show skeleton during loading or transitioning
   const showSkeleton = isLoading || isTransitioning;
 
@@ -112,7 +135,7 @@ export function AvatarWithLoading({
         // Image with loading states
         <Image
           key={imageKey}
-          src={src}
+          src={optimizedSrc}
           alt={alt}
           fill
           className={cn(
@@ -123,7 +146,7 @@ export function AvatarWithLoading({
           blurDataURL={BLUR_DATA_URL}
           onLoad={handleImageLoad}
           onError={handleImageError}
-          sizes={`${sizeClasses.container.split(' ')[0].replace('w-', '')}px`}
+          sizes={`${getImageSize()}px`}
           priority={size === 'xl'}
         />
       )}

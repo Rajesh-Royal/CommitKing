@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
@@ -20,17 +20,13 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
     ],
+    // Completely disable optimization for all images to avoid GitHub avatar timeouts
+    unoptimized: true,
   },
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
 };
