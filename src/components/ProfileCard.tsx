@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, MapPin, Users, Code } from "lucide-react";
 import { ContributionGraph } from "./ContributionGraph";
-import Image from "next/image";
+import { AvatarWithLoading } from "@/components/ui/avatar-with-loading";
 
 interface Profile {
   id: number;
@@ -39,6 +39,7 @@ interface ProfileCardProps {
   contributions?: any[];
   totalContributions?: number;
   type: 'profile' | 'repo';
+  isTransitioning?: boolean;
 }
 
 export function ProfileCard({ 
@@ -46,7 +47,8 @@ export function ProfileCard({
   repository, 
   contributions = [], 
   totalContributions = 0, 
-  type 
+  type,
+  isTransitioning = false
 }: ProfileCardProps) {
   if (type === 'profile' && profile) {
     return (
@@ -55,12 +57,14 @@ export function ProfileCard({
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-             <Image
+             <AvatarWithLoading
                 src={profile.avatar_url}
                 alt={`${profile.login}'s avatar`}
-                width={64}
-                height={64}
-                className="w-16 h-16 rounded-full border-2 border-gray-200 dark:border-gray-600"
+                username={profile.login}
+                type="user"
+                size="lg"
+                isTransitioning={isTransitioning}
+                className="border-2 border-gray-200 dark:border-gray-600"
               />
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -123,12 +127,14 @@ export function ProfileCard({
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-             <Image
+             <AvatarWithLoading
                 src={repository.owner.avatar_url}
                 alt={`${repository.owner.login}'s avatar`}
-                width={64}
-                height={64}
-                className="w-16 h-16 rounded-full border-2 border-gray-200 dark:border-gray-600"
+                username={repository.owner.login}
+                type="user"
+                size="lg"
+                isTransitioning={isTransitioning}
+                className="border-2 border-gray-200 dark:border-gray-600"
               />
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">

@@ -1,12 +1,10 @@
-'use client';
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, GitFork, Flame, Snowflake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { githubAPI } from "@/lib/github";
-import Image from "next/image";
+import { AvatarWithLoading } from "@/components/ui/avatar-with-loading";
 
 interface LeaderboardEntry {
   id: string;
@@ -60,7 +58,7 @@ export function FeaturedRepositories({ onRepositorySelect }: FeaturedRepositorie
               hotty_count: entry.hotty_count,
               notty_count: entry.notty_count,
             };
-          } catch (error) {
+          } catch {
             // Fallback if GitHub API fails
             const [owner, repo] = entry.github_id.split('/');
             return {
@@ -169,12 +167,13 @@ export function FeaturedRepositories({ onRepositorySelect }: FeaturedRepositorie
               )}
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-4">
-                  <Image
+                  <AvatarWithLoading
                     src={repo.owner.avatar_url}
                     alt={`${repo.owner.login}'s avatar`}
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 rounded-full border-2 border-gray-200 dark:border-gray-600"
+                    username={repo.owner.login}
+                    type="user"
+                    size="md"
+                    className="border-2 border-gray-200 dark:border-gray-600"
                   />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 dark:text-white truncate">

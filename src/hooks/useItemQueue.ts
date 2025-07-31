@@ -263,6 +263,30 @@ export function useItemQueue(options: UseItemQueueOptions = {}) {
     return queue.slice(1, count + 1);
   }, [queue]);
 
+  // Preload next avatar for smoother transitions
+  const preloadNextAvatar = useCallback((nextItem: QueueItem) => {
+    if (nextItem?.data) {
+      const img = new Image();
+      
+      // Handle both profile and repo avatars
+      if ('avatar_url' in nextItem.data) {
+        // User profile
+        img.src = nextItem.data.avatar_url;
+      } else if ('owner' in nextItem.data && nextItem.data.owner?.avatar_url) {
+        // Repository owner avatar
+        img.src = nextItem.data.owner.avatar_url;
+      }
+    }
+  }, []);
+
+  // Preload next item's avatar when queue changes
+  useEffect(() => {
+    const nextQueueItem = queue[1]; // Next item after current
+    if (nextQueueItem) {
+      preloadNextAvatar(nextQueueItem);
+    }
+  }, [queue, preloadNextAvatar]);
+
   return {
     currentItem,
     nextItems: getNextItems(),

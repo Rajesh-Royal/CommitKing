@@ -11,7 +11,7 @@ import { FeaturedRepositories } from "@/components/FeaturedRepositories";
 import { TabSelector } from "@/components/TabSelector";
 import { githubAPI } from "@/lib/github";
 import { SkipForward } from "lucide-react";
-import Image from "next/image";
+import { AvatarWithLoading } from "@/components/ui/avatar-with-loading";
 import { useItemQueue } from "@/hooks/useItemQueue";
 import { useGitHubErrorHandler } from "@/hooks/useGitHubErrorHandler";
 
@@ -169,12 +169,12 @@ export default function HomePage() {
                 }}
               >
                 <div className="flex items-center space-x-3">
-                  <Image
+                  <AvatarWithLoading
                     src={result.avatar_url || result.owner?.avatar_url}
                     alt="Avatar"
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 rounded-full"
+                    username={result.login || result.owner?.login}
+                    type={result.login ? 'user' : 'repo'}
+                    size="sm"
                   />
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">
@@ -214,6 +214,7 @@ export default function HomePage() {
               contributions={contributions}
               totalContributions={totalContributions}
               type={currentItem.type}
+              isTransitioning={isTransitioning}
             />
             <RatingButtons
               githubId={currentItem.type === 'profile' ? profileData?.id?.toString() || '' : repoData?.id?.toString() || ''}

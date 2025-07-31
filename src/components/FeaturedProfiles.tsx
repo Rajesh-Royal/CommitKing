@@ -1,10 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Flame, Snowflake } from "lucide-react";
+import { Flame, Snowflake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { githubAPI } from "@/lib/github";
-import Image from "next/image";
+import { AvatarWithLoading } from "@/components/ui/avatar-with-loading";
 
 interface LeaderboardEntry {
   id: string;
@@ -52,7 +52,7 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
               hotty_count: entry.hotty_count,
               notty_count: entry.notty_count,
             };
-          } catch (error) {
+          } catch {
             // Fallback if GitHub API fails
             return {
               username: entry.github_id,
@@ -132,12 +132,13 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
               )}
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-4">
-                  <Image
+                  <AvatarWithLoading
                     src={profile.avatar_url}
                     alt={`${profile.username}'s avatar`}
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 rounded-full border-2 border-gray-200 dark:border-gray-600"
+                    username={profile.username}
+                    type="user"
+                    size="md"
+                    className="border-2 border-gray-200 dark:border-gray-600"
                   />
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">
