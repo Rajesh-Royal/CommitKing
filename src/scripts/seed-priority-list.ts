@@ -1,3 +1,7 @@
+// This script is not used anywhere as we have the priority profiles and repos hardcoded in the codebase.
+// It is kept here for reference and can be used to seed the priority list in the database
+// if needed in the future.
+
 import { storage } from "@/lib/storage";
 import { PRIORITY_PROFILES, PRIORITY_REPOS } from "@/lib/github";
 

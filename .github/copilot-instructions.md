@@ -30,7 +30,6 @@ Before making changes, always:
 - **Drizzle ORM**: Type-safe database operations in `src/shared/schema.ts` and `src/lib/storage.ts`
 - **Key Tables**: `users`, `ratings`, `leaderboard_cache`, `priority_list`
 - **Storage Pattern**: Abstract `IStorage` interface with `DbStorage` implementation for easy testing/mocking
-- **Seeding**: Use `src/scripts/seed-priority-list.ts` to populate priority content
 
 ### GitHub Integration
 - **Rate Limit Handling**: `useGitHubErrorHandler` provides user-friendly error messages for API limits
@@ -48,9 +47,6 @@ pnpm db:generate           # Generate Drizzle migrations
 pnpm db:push              # Push schema changes to database
 pnpm db:studio            # Open Drizzle Studio for database inspection
 
-# Database seeding
-node --loader tsx src/scripts/seed-priority-list.ts
-```
 
 ### Component Patterns
 - **shadcn/ui Components**: Use existing components from `src/components/ui/` before creating new ones
