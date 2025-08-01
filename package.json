@@ -13,6 +13,7 @@
     "type-check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "pg:db:push": "psql \"[db_url]\" -f migrations/[name].sql",
     "db:studio": "drizzle-kit studio",
     "prepare": "husky install"
   },

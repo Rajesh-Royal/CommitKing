@@ -1,14 +1,18 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { Github, Users, Crown, Rocket, Star } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { signInWithGitHub } from "@/lib/supabase";
-import Image from "next/image";
-import { OpenSourceAlert } from "@/components/OpenSourceAlert";
+import { useAuth } from '@/contexts/AuthContext';
+import { Crown, Github, Rocket, Star, Users } from 'lucide-react';
+
+import Image from 'next/image';
+
+import { OpenSourceAlert } from '@/components/OpenSourceAlert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { useToast } from '@/hooks/use-toast';
+
+import { signInWithGitHub } from '@/lib/supabase';
 
 export default function WaitlistPage() {
   const { user, logout } = useAuth();
@@ -21,9 +25,10 @@ export default function WaitlistPage() {
     } catch (error) {
       console.error('GitHub auth error:', error);
       toast({
-        title: "Authentication failed",
-        description: error instanceof Error ? error.message : "Please try again.",
-        variant: "destructive",
+        title: 'Authentication failed',
+        description:
+          error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -39,13 +44,17 @@ export default function WaitlistPage() {
               alt="CommitKings Logo"
               width={64}
               height={64}
-              className="mr-3" />
+              className="mr-3"
+            />
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
               CommitKings
             </h1>
           </div>
 
-          <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium">
+          <Badge
+            variant="secondary"
+            className="mb-6 px-4 py-2 text-sm font-medium"
+          >
             <Rocket className="w-4 h-4 mr-2" />
             Join the Launch
           </Badge>
@@ -54,7 +63,9 @@ export default function WaitlistPage() {
             Rate GitHub Profiles & Repositories
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Discover amazing developers and repositories. Join CommitKings now to help build the ultimate community-driven showcase of GitHub talent!
+            Discover amazing developers and repositories. Join CommitKings now
+            to help build the ultimate community-driven showcase of GitHub
+            talent!
           </p>
         </div>
 
@@ -107,10 +118,12 @@ export default function WaitlistPage() {
         <Card className="max-w-md mx-auto mb-12">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-              {user ? "Welcome to CommitKings! 👋" : "Join CommitKings"}
+              {user ? 'Welcome to CommitKings! 👋' : 'Join CommitKings'}
             </CardTitle>
             <p className="text-gray-600 dark:text-gray-300 text-sm">
-              {user ? "You're all set for the launch!" : "Sign in with GitHub to get notified when we launch"}
+              {user
+                ? "You're all set for the launch!"
+                : 'Sign in with GitHub to get notified when we launch'}
             </p>
           </CardHeader>
           <CardContent>
@@ -119,18 +132,27 @@ export default function WaitlistPage() {
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
                   <div className="flex items-center justify-center mb-4">
                     <Image
-                      src={user.avatar_url || ''}
-                      alt={user.username}
+                      src={user.user_metadata.avatar_url || ''}
+                      alt={
+                        user.user_metadata.user_name ||
+                        user.user_metadata.preferred_username ||
+                        'User'
+                      }
                       width={64}
                       height={64}
                       className="rounded-full border-2 border-green-200 dark:border-green-600"
                     />
                   </div>
                   <p className="text-green-800 dark:text-green-200 font-medium text-lg">
-                    Welcome, {user.username}! 🎉
+                    Welcome,{' '}
+                    {user.user_metadata.user_name ||
+                      user.user_metadata.preferred_username ||
+                      'User'}
+                    ! 🎉
                   </p>
                   <p className="text-green-600 dark:text-green-300 text-sm mt-2">
-                    You&apos;re registered for CommitKings. We&apos;ll email you as soon as we launch!
+                    You&apos;re registered for CommitKings. We&apos;ll email you
+                    as soon as we launch!
                   </p>
                 </div>
                 <div className="pt-4">
@@ -143,15 +165,15 @@ export default function WaitlistPage() {
                         await signOut();
                         logout();
                         toast({
-                          title: "Signed out",
-                          description: "You have been successfully signed out.",
+                          title: 'Signed out',
+                          description: 'You have been successfully signed out.',
                         });
                       } catch (error) {
                         console.error('Logout error:', error);
                         logout(); // Fallback to local logout
                         toast({
-                          title: "Signed out",
-                          description: "You have been signed out.",
+                          title: 'Signed out',
+                          description: 'You have been signed out.',
                         });
                       }
                     }}
@@ -172,9 +194,7 @@ export default function WaitlistPage() {
                     Connect with GitHub to get early access when we launch!
                   </p>
                 </div>
-                <Button
-                  onClick={handleGitHubAuth}
-                >
+                <Button onClick={handleGitHubAuth}>
                   <Github className="w-4 h-4 mr-2" />
                   Sign in with GitHub
                 </Button>
@@ -185,7 +205,10 @@ export default function WaitlistPage() {
         <OpenSourceAlert />
         {/* Footer */}
         <div className="text-center mt-12 text-sm text-gray-800 dark:text-gray-300">
-          <p>Built with <span className="text-red-500">❤️</span> for the developer community</p>
+          <p>
+            Built with <span className="text-red-500">❤️</span> for the
+            developer community
+          </p>
           <p className="mt-2">No spam, just launch notifications and updates</p>
         </div>
       </div>

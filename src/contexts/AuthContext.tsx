@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createContext, useContext, useEffect, useState } from "react";
-import type { User } from "@/shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { createContext, useContext, useEffect, useState } from 'react';
+
+import type { SupabaseUser } from '@/shared/schema';
 
 interface AuthContextType {
-  user: User | null;
+  user: SupabaseUser | null;
   login: (githubUser: any) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -13,7 +13,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -22,40 +22,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check for existing Supabase session first
         const { getCurrentSession } = await import('@/lib/supabase');
         const session = await getCurrentSession();
-        
+
         if (session?.user) {
-          const userMetadata = session.user.user_metadata;
-          const githubUser = {
-            id: userMetadata.user_id || session.user.id,
-            login: userMetadata.user_name || userMetadata.preferred_username,
-            avatar_url: userMetadata.avatar_url,
-            name: userMetadata.full_name || userMetadata.name,
-            bio: userMetadata.bio || '',
-            email: session.user.email,
+          // Create SupabaseUser object directly from session
+          const supabaseUser: SupabaseUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            user_metadata: {
+              sub: session.user.user_metadata.sub || session.user.id,
+              name:
+                session.user.user_metadata.name ||
+                session.user.user_metadata.full_name ||
+                '',
+              full_name:
+                session.user.user_metadata.full_name ||
+                session.user.user_metadata.name ||
+                '',
+              user_name:
+                session.user.user_metadata.user_name ||
+                session.user.user_metadata.preferred_username ||
+                '',
+              avatar_url: session.user.user_metadata.avatar_url || '',
+              email: session.user.email || '',
+              preferred_username:
+                session.user.user_metadata.preferred_username ||
+                session.user.user_metadata.user_name ||
+                '',
+            },
+            created_at: session.user.created_at,
+            updated_at: session.user.updated_at || session.user.created_at,
+            app_metadata: {
+              provider: session.user.app_metadata.provider || 'github',
+              providers: session.user.app_metadata.providers || ['github'],
+            },
           };
-          await login(githubUser);
+          setUser(supabaseUser);
         } else {
-          // Fallback to localStorage
-          const storedUser = localStorage.getItem("commitkings_user");
-          if (storedUser) {
-            try {
-              setUser(JSON.parse(storedUser));
-            } catch (error) {
-              console.error("Failed to parse stored user:", error);
-              localStorage.removeItem("commitkings_user");
-            }
-          }
+          // Clear any stored auth data if no session
+          localStorage.removeItem('commitkings_user');
         }
       } catch (error) {
-        console.error("Auth initialization error:", error);
+        console.error('Auth initialization error:', error);
         // Fallback to localStorage
-        const storedUser = localStorage.getItem("commitkings_user");
+        const storedUser = localStorage.getItem('commitkings_user');
         if (storedUser) {
           try {
             setUser(JSON.parse(storedUser));
           } catch (error) {
-            console.error("Failed to parse stored user:", error);
-            localStorage.removeItem("commitkings_user");
+            console.error('Failed to parse stored user:', error);
+            localStorage.removeItem('commitkings_user');
           }
         }
       } finally {
@@ -67,24 +82,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for Supabase auth state changes
     let authListener: any;
-    import('@/lib/supabase').then(({ onAuthStateChange }) => {
-      authListener = onAuthStateChange((event: string, session: any) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const userMetadata = session.user.user_metadata;
-          const githubUser = {
-            id: userMetadata.user_id || session.user.id,
-            login: userMetadata.user_name || userMetadata.preferred_username,
-            avatar_url: userMetadata.avatar_url,
-            name: userMetadata.full_name || userMetadata.name,
-            bio: userMetadata.bio || '',
-            email: session.user.email,
-          };
-          login(githubUser);
-        } else if (event === 'SIGNED_OUT') {
-          logout();
-        }
-      });
-    }).catch(console.error);
+    import('@/lib/supabase')
+      .then(({ onAuthStateChange }) => {
+        authListener = onAuthStateChange((event: string, session: any) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            // Create SupabaseUser object directly from session
+            const supabaseUser: SupabaseUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              user_metadata: {
+                sub: session.user.user_metadata.sub || session.user.id,
+                name:
+                  session.user.user_metadata.name ||
+                  session.user.user_metadata.full_name ||
+                  '',
+                full_name:
+                  session.user.user_metadata.full_name ||
+                  session.user.user_metadata.name ||
+                  '',
+                user_name:
+                  session.user.user_metadata.user_name ||
+                  session.user.user_metadata.preferred_username ||
+                  '',
+                avatar_url: session.user.user_metadata.avatar_url || '',
+                email: session.user.email || '',
+                preferred_username:
+                  session.user.user_metadata.preferred_username ||
+                  session.user.user_metadata.user_name ||
+                  '',
+              },
+              created_at: session.user.created_at,
+              updated_at: session.user.updated_at || session.user.created_at,
+              app_metadata: {
+                provider: session.user.app_metadata.provider || 'github',
+                providers: session.user.app_metadata.providers || ['github'],
+              },
+            };
+            setUser(supabaseUser);
+          } else if (event === 'SIGNED_OUT') {
+            logout();
+          }
+        });
+      })
+      .catch(console.error);
 
     return () => {
       if (authListener?.subscription) {
@@ -94,25 +134,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (githubUser: any) => {
-    try {
-      const response = await apiRequest("POST", "/api/auth/github", {
-        github_id: githubUser.id.toString(),
-        username: githubUser.login,
-        avatar_url: githubUser.avatar_url,
-      });
-      
-      const { user } = await response.json();
-      setUser(user);
-      localStorage.setItem("commitkings_user", JSON.stringify(user));
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
-    }
+    // No longer needed - Supabase handles user creation
+    // We get user data directly from Supabase session
+    console.log('Login called with:', githubUser);
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("commitkings_user");
+    localStorage.removeItem('commitkings_user');
   };
 
   return (
@@ -125,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

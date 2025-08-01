@@ -1,10 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Loader } from "lucide-react";
-import { AlreadyRated } from "@/components/AlreadyRated";
+import { useAuth } from '@/contexts/AuthContext';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Loader } from 'lucide-react';
+
+import { AlreadyRated } from '@/components/AlreadyRated';
+import { Button } from '@/components/ui/button';
+
+import { useToast } from '@/hooks/use-toast';
+
+import { apiRequest } from '@/lib/queryClient';
 
 interface RatingButtonsProps {
   githubId: string;
@@ -13,7 +16,12 @@ interface RatingButtonsProps {
   disabled?: boolean;
 }
 
-export function RatingButtons({ githubId, type, onRated, disabled = false }: RatingButtonsProps) {
+export function RatingButtons({
+  githubId,
+  type,
+  onRated,
+  disabled = false,
+}: RatingButtonsProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -25,7 +33,10 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
   // });
 
   // Check if user has already rated
-  const { data: userRating, isFetching: isFetchingUserRating } = useQuery<{hasRated: boolean; rating?: string}>({
+  const { data: userRating, isFetching: isFetchingUserRating } = useQuery<{
+    hasRated: boolean;
+    rating?: string;
+  }>({
     queryKey: ['/api/ratings/user', user?.id, 'check', githubId, type],
     enabled: !!user && !!githubId,
   });
@@ -33,39 +44,53 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
   const ratingMutation = useMutation({
     mutationFn: async (rating: 'hotty' | 'notty') => {
       if (!user) throw new Error('Must be logged in to rate');
-      
+
       return apiRequest('POST', '/api/ratings', {
-        user_id: user.id,
+        user_id: user.id, // Supabase user ID
         github_id: githubId,
+        github_username:
+          user.user_metadata.user_name ||
+          user.user_metadata.preferred_username ||
+          '',
+        full_name:
+          user.user_metadata.full_name || user.user_metadata.name || '',
         type,
         rating,
       });
     },
-    onMutate: async (rating) => {
+    onMutate: async rating => {
       // Optimistic update for user rating only (no counts)
-      queryClient.setQueryData(['/api/ratings/user', user?.id, 'check', githubId, type], {
-        hasRated: true,
-        rating,
-      });
+      queryClient.setQueryData(
+        ['/api/ratings/user', user?.id, 'check', githubId, type],
+        {
+          hasRated: true,
+          rating,
+        }
+      );
     },
     onError: (error: Error) => {
       // Rollback optimistic updates on error
-      queryClient.setQueryData(['/api/ratings/user', user?.id, 'check', githubId, type], {
-        hasRated: false,
-      });
-      
+      queryClient.setQueryData(
+        ['/api/ratings/user', user?.id, 'check', githubId, type],
+        {
+          hasRated: false,
+        }
+      );
+
       toast({
-        title: "Rating failed",
-        description: error.message || "Failed to submit rating",
-        variant: "destructive",
+        title: 'Rating failed',
+        description: error.message || 'Failed to submit rating',
+        variant: 'destructive',
       });
     },
     onSuccess: () => {
       // Invalidate and refetch relevant queries silently (no counts API)
-      queryClient.invalidateQueries({ queryKey: ['/api/ratings/user', user?.id, 'check', githubId, type] });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/ratings/user', user?.id, 'check', githubId, type],
+      });
       // Not required, as it will increase the load on the server
       // queryClient.invalidateQueries({ queryKey: ['/api/leaderboard'] });
-      
+
       // No toast needed since user has already moved on to next item
     },
   });
@@ -73,44 +98,48 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
   const handleRating = (rating: 'hotty' | 'notty') => {
     if (!user) {
       toast({
-        title: "Sign in required",
-        description: "Please sign in with GitHub to rate profiles and repositories.",
-        variant: "destructive",
+        title: 'Sign in required',
+        description:
+          'Please sign in with GitHub to rate profiles and repositories.',
+        variant: 'destructive',
       });
       return;
     }
 
     if (userRating?.hasRated) {
       toast({
-        title: "Already rated",
-        description: "You have already rated this item.",
-        variant: "destructive",
+        title: 'Already rated',
+        description: 'You have already rated this item.',
+        variant: 'destructive',
       });
       return;
     }
 
     // Call onRated immediately for optimistic transition
     onRated?.();
-    
+
     // Then submit the rating in the background
     ratingMutation.mutate(rating);
   };
 
-  const isDisabled = !user || userRating?.hasRated || ratingMutation.isPending || disabled;
+  const isDisabled =
+    !user || userRating?.hasRated || ratingMutation.isPending || disabled;
 
   // If user has already rated, show the AlreadyRated component instead
   if (userRating?.hasRated && userRating.rating) {
     return (
-      <AlreadyRated 
-        rating={userRating.rating as 'hotty' | 'notty'} 
-        itemType={type} 
+      <AlreadyRated
+        rating={userRating.rating as 'hotty' | 'notty'}
+        itemType={type}
       />
     );
   }
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-6">
-      <Loader className={`animate-spin repeat-infinite mx-auto -mt-4 ${isFetchingUserRating ? 'block' : 'hidden'}`}/>
+      <Loader
+        className={`animate-spin repeat-infinite mx-auto -mt-4 ${isFetchingUserRating ? 'block' : 'hidden'}`}
+      />
       <div className="flex justify-center space-x-8">
         <Button
           onClick={() => handleRating('notty')}
@@ -120,7 +149,7 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
           <span className="text-2xl mr-3">🧊</span>
           <span>Notty</span>
         </Button>
-        
+
         <Button
           onClick={() => handleRating('hotty')}
           disabled={isDisabled}
@@ -130,7 +159,7 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
           <span>Hotty</span>
         </Button>
       </div>
-      
+
       {!user && (
         <div className="text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
           Sign in with GitHub to rate this {type}

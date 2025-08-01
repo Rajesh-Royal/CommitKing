@@ -1,12 +1,17 @@
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { Github, Home, Trophy, User } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
-import { signInWithGitHub } from "@/lib/supabase";
-import Image from "next/image";
-import { ThemeToggle } from "./ui/theme-toggle";
+import { useAuth } from '@/contexts/AuthContext';
+import { Github, Home, Trophy, User } from 'lucide-react';
+
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+import { Button } from '@/components/ui/button';
+
+import { useToast } from '@/hooks/use-toast';
+
+import { signInWithGitHub } from '@/lib/supabase';
+
+import { ThemeToggle } from './ui/theme-toggle';
 
 export function Navigation() {
   const { user, logout, isLoading } = useAuth();
@@ -20,9 +25,10 @@ export function Navigation() {
     } catch (error) {
       console.error('GitHub auth error:', error);
       toast({
-        title: "Authentication failed",
-        description: error instanceof Error ? error.message : "Please try again.",
-        variant: "destructive",
+        title: 'Authentication failed',
+        description:
+          error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -41,7 +47,8 @@ export function Navigation() {
                 alt="CommitKings Logo"
                 width={50}
                 height={50}
-                className="mr-3" />
+                className="mr-3"
+              />
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 CommitKings
               </h1>
@@ -53,10 +60,11 @@ export function Navigation() {
             <Link href="/">
               <Button
                 variant="ghost"
-                className={`px-3 py-2 text-sm font-medium transition-colors ${isActive('/')
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive('/')
                     ? 'text-gray-900 dark:text-white'
                     : 'text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
-                  }`}
+                }`}
               >
                 <Home className="w-4 h-4 mr-1" />
                 Home
@@ -65,10 +73,11 @@ export function Navigation() {
             <Link href="/leaderboard">
               <Button
                 variant="ghost"
-                className={`px-3 py-2 text-sm font-medium transition-colors ${isActive('/leaderboard')
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive('/leaderboard')
                     ? 'text-gray-900 dark:text-white'
                     : 'text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
-                  }`}
+                }`}
               >
                 <Trophy className="w-4 h-4 mr-1" />
                 Leaderboard
@@ -78,10 +87,11 @@ export function Navigation() {
               <Link href="/dashboard">
                 <Button
                   variant="ghost"
-                  className={`px-3 py-2 text-sm font-medium transition-colors ${isActive('/dashboard')
+                  className={`px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive('/dashboard')
                       ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
-                    }`}
+                  }`}
                 >
                   <User className="w-4 h-4 mr-1" />
                   Dashboard
@@ -104,14 +114,20 @@ export function Navigation() {
             ) : user ? (
               <div className="flex items-center space-x-3">
                 <Image
-                  src={user.avatar_url || '/default-avatar.png'}
-                  alt={user.username}
+                  src={user.user_metadata.avatar_url || '/default-avatar.png'}
+                  alt={
+                    user.user_metadata.user_name ||
+                    user.user_metadata.preferred_username ||
+                    'User'
+                  }
                   width={32}
                   height={32}
                   className="w-8 h-8 rounded-full"
                 />
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {user.username}
+                  {user.user_metadata.user_name ||
+                    user.user_metadata.preferred_username ||
+                    'User'}
                 </span>
                 <Button
                   variant="outline"
@@ -122,15 +138,15 @@ export function Navigation() {
                       await signOut();
                       logout();
                       toast({
-                        title: "Signed out",
-                        description: "You have been successfully signed out.",
+                        title: 'Signed out',
+                        description: 'You have been successfully signed out.',
                       });
                     } catch (error) {
                       console.error('Logout error:', error);
                       logout(); // Fallback to local logout
                       toast({
-                        title: "Signed out",
-                        description: "You have been signed out.",
+                        title: 'Signed out',
+                        description: 'You have been signed out.',
                       });
                     }
                   }}
@@ -139,10 +155,7 @@ export function Navigation() {
                 </Button>
               </div>
             ) : (
-              <Button
-              variant="default"
-                onClick={handleGitHubAuth}
-              >
+              <Button variant="default" onClick={handleGitHubAuth}>
                 <Github className="w-4 h-4 mr-2" />
                 Sign in with GitHub
               </Button>
