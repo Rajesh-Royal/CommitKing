@@ -5,15 +5,12 @@ import {
   users, 
   ratings, 
   leaderboard_cache, 
-  priority_list,
   type User, 
   type InsertUser, 
   type Rating, 
   type InsertRating,
   type LeaderboardCache,
   type InsertLeaderboardCache,
-  type PriorityList,
-  type InsertPriorityList
 } from "@/shared/schema";
 
 if (!process.env.DATABASE_URL) {
@@ -39,10 +36,6 @@ export interface IStorage {
   // Leaderboard operations
   getLeaderboard(type: string, limit?: number): Promise<LeaderboardCache[]>;
   updateLeaderboardCache(githubId: string, type: string, data: InsertLeaderboardCache): Promise<void>;
-
-  // Priority list operations
-  getPriorityList(type: string): Promise<PriorityList[]>;
-  addToPriorityList(item: InsertPriorityList): Promise<PriorityList>;
 }
 
 export class DbStorage implements IStorage {
@@ -129,17 +122,6 @@ export class DbStorage implements IStorage {
       });
   }
 
-  async getPriorityList(type: string): Promise<PriorityList[]> {
-    return await db.select().from(priority_list)
-      .where(eq(priority_list.type, type))
-      .orderBy(desc(priority_list.priority_score));
-  }
-
-  async addToPriorityList(item: InsertPriorityList): Promise<PriorityList> {
-    const result = await db.insert(priority_list).values(item).returning();
-    return result[0];
-  }
-
   private async updateRatingCounts(githubId: string, type: string): Promise<void> {
     const counts = await this.getRatingCounts(githubId, type);
     
@@ -150,7 +132,6 @@ export class DbStorage implements IStorage {
       github_id: githubId,
       type,
       username: user?.username,
-      avatar_url: user?.avatar_url,
       hotty_count: counts.hotty,
       notty_count: counts.notty,
     });
