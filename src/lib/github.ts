@@ -39,7 +39,7 @@ class GitHubAPI {
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Accept': 'application/vnd.github.v3+json',
+        Accept: 'application/vnd.github.v3+json',
         'User-Agent': 'CommitKings',
         ...options.headers,
       },
@@ -55,14 +55,32 @@ class GitHubAPI {
       }
 
       // Create error object with GitHub-specific properties
-      const error = new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`) as Error & {
+      const error = new Error(
+        errorData.message ||
+          `GitHub API error: ${response.status} ${response.statusText}`
+      ) as Error & {
         status: number;
         documentation_url?: string;
+        rateLimitReset?: number;
       };
 
       error.status = response.status;
       if (errorData.documentation_url) {
         error.documentation_url = errorData.documentation_url;
+      }
+
+      // For rate limit errors, extract the reset time from headers
+      if (
+        response.status === 429 ||
+        response.status === 403 ||
+        response.status === 401
+      ) {
+        const rateLimitReset = response.headers.get('x-ratelimit-reset');
+        if (rateLimitReset) {
+          error.rateLimitReset = parseInt(rateLimitReset, 10) * 1000; // Convert to milliseconds
+        } else {
+          error.rateLimitReset = Date.now() + 10000; // default to 10 seconds if not provided
+        }
       }
 
       throw error;
@@ -71,7 +89,8 @@ class GitHubAPI {
     return response.json();
   }
   async getUser(username: string | number): Promise<GitHubUser> {
-    const isNumber = typeof username === 'number' || /^\d+$/.test(String(username));
+    const isNumber =
+      typeof username === 'number' || /^\d+$/.test(String(username));
     const endpoint = isNumber
       ? `${GITHUB_API_BASE}/user/${username}`
       : `${GITHUB_API_BASE}/users/${username}`;
@@ -82,12 +101,24 @@ class GitHubAPI {
     return this.fetchWithAuth(`${GITHUB_API_BASE}/repos/${owner}/${repo}`);
   }
 
-  async searchUsers(query: string, page = 1, perPage = 10): Promise<{ items: GitHubUser[] }> {
-    return this.fetchWithAuth(`${GITHUB_API_BASE}/search/users?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}&sort=followers&order=desc`);
+  async searchUsers(
+    query: string,
+    page = 1,
+    perPage = 10
+  ): Promise<{ items: GitHubUser[] }> {
+    return this.fetchWithAuth(
+      `${GITHUB_API_BASE}/search/users?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}&sort=followers&order=desc`
+    );
   }
 
-  async searchRepos(query: string, page = 1, perPage = 10): Promise<{ items: GitHubRepo[] }> {
-    return this.fetchWithAuth(`${GITHUB_API_BASE}/search/repositories?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}&sort=stars&order=desc`);
+  async searchRepos(
+    query: string,
+    page = 1,
+    perPage = 10
+  ): Promise<{ items: GitHubRepo[] }> {
+    return this.fetchWithAuth(
+      `${GITHUB_API_BASE}/search/repositories?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}&sort=stars&order=desc`
+    );
   }
 
   // Generate contribution graph data (simplified version)

@@ -1,55 +1,85 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { githubAPI, PRIORITY_PROFILES, PRIORITY_REPOS } from '@/lib/github';
-import { useEffect, useCallback } from 'react';
 import { debugLog } from '@/utils/debugLog';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { useCallback, useEffect } from 'react';
+
+import { PRIORITY_PROFILES, PRIORITY_REPOS, githubAPI } from '@/lib/github';
 
 interface UseSmartPrefetchOptions {
   type: 'profile' | 'repo';
   enabled?: boolean;
+  shouldSkipAPICall?: () => boolean;
 }
 
-export function useSmartPrefetch({ type, enabled = true }: UseSmartPrefetchOptions) {
+export function useSmartPrefetch({
+  type,
+  enabled = true,
+  shouldSkipAPICall,
+}: UseSmartPrefetchOptions) {
   const queryClient = useQueryClient();
 
-  const prefetchProfile = useCallback(async (username: string) => {
-    try {
-      await queryClient.prefetchQuery({
-        queryKey: ['github-profile', username],
-        queryFn: () => githubAPI.getUser(username),
-        staleTime: 1000 * 60 * 60 * 24, // 24 hours
-      });
-      debugLog.api.success(`profile/${username}`, 1);
-    } catch (error) {
-      debugLog.api.error(`profile/${username}`, error);
-    }
-  }, [queryClient]);
+  const prefetchProfile = useCallback(
+    async (username: string) => {
+      try {
+        await queryClient.prefetchQuery({
+          queryKey: ['github-profile', username],
+          queryFn: () => githubAPI.getUser(username),
+          staleTime: 1000 * 60 * 60 * 24, // 24 hours
+        });
+        debugLog.api.success(`profile/${username}`, 1);
+      } catch (error) {
+        debugLog.api.error(`profile/${username}`, error);
+      }
+    },
+    [queryClient]
+  );
 
-  const prefetchRepository = useCallback(async (username: string, repo: string) => {
-    try {
-      await queryClient.prefetchQuery({
-        queryKey: ['github-repo', username, repo],
-        queryFn: () => githubAPI.getRepo(username, repo),
-        staleTime: 1000 * 60 * 60 * 24, // 24 hours
-      });
-      debugLog.api.success(`repo/${username}/${repo}`, 1);
-    } catch (error) {
-      debugLog.api.error(`repo/${username}/${repo}`, error);
-    }
-  }, [queryClient]);
+  const prefetchRepository = useCallback(
+    async (username: string, repo: string) => {
+      try {
+        await queryClient.prefetchQuery({
+          queryKey: ['github-repo', username, repo],
+          queryFn: () => githubAPI.getRepo(username, repo),
+          staleTime: 1000 * 60 * 60 * 24, // 24 hours
+        });
+        debugLog.api.success(`repo/${username}/${repo}`, 1);
+      } catch (error) {
+        debugLog.api.error(`repo/${username}/${repo}`, error);
+      }
+    },
+    [queryClient]
+  );
 
   // Prefetch priority items based on type
   const prefetchBatch = useCallback(async () => {
     if (!enabled) return;
 
-    debugLog.cache.prefetch(type, type === 'repo' ? PRIORITY_REPOS.length : PRIORITY_PROFILES.length);
+    // Check if we should skip API calls due to rate limiting
+    if (shouldSkipAPICall && shouldSkipAPICall()) {
+      debugLog.info('Skipping prefetch batch due to rate limiting');
+      return;
+    }
+
+    debugLog.cache.prefetch(
+      type,
+      type === 'repo' ? PRIORITY_REPOS.length : PRIORITY_PROFILES.length
+    );
 
     try {
       if (type === 'repo') {
         // Prefetch a subset of priority repositories
         const reposToPrefix = PRIORITY_REPOS.slice(0, 8); // Prefetch first 8 repos
-        debugLog.api.start(`Prefetching ${reposToPrefix.length} priority repositories`);
-        
+        debugLog.api.start(
+          `Prefetching ${reposToPrefix.length} priority repositories`
+        );
+
         for (const repoPath of reposToPrefix) {
+          // Check rate limiting before each request
+          if (shouldSkipAPICall && shouldSkipAPICall()) {
+            debugLog.info('Stopping prefetch due to rate limiting');
+            break;
+          }
+
           const [username, repo] = repoPath.split('/');
           await prefetchRepository(username, repo);
           // Small delay to be respectful to the API
@@ -58,19 +88,30 @@ export function useSmartPrefetch({ type, enabled = true }: UseSmartPrefetchOptio
       } else {
         // Prefetch a subset of priority profiles
         const profilesToPrefetch = PRIORITY_PROFILES.slice(0, 12); // Prefetch first 12 profiles
-        debugLog.api.start(`Prefetching ${profilesToPrefetch.length} priority profiles`);
-        
+        debugLog.api.start(
+          `Prefetching ${profilesToPrefetch.length} priority profiles`
+        );
+
         for (const username of profilesToPrefetch) {
+          // Check rate limiting before each request
+          if (shouldSkipAPICall && shouldSkipAPICall()) {
+            debugLog.info('Stopping prefetch due to rate limiting');
+            break;
+          }
+
           await prefetchProfile(username);
           await new Promise(resolve => setTimeout(resolve, 150));
         }
       }
-      
-      debugLog.api.success(`priority-${type}-prefetch`, type === 'repo' ? 8 : 12);
+
+      debugLog.api.success(
+        `priority-${type}-prefetch`,
+        type === 'repo' ? 8 : 12
+      );
     } catch (error) {
       debugLog.api.error(`prefetch-${type}`, error);
     }
-  }, [type, enabled, prefetchProfile, prefetchRepository]);
+  }, [type, enabled, prefetchProfile, prefetchRepository, shouldSkipAPICall]);
 
   // Auto-prefetch on mount
   useEffect(() => {
@@ -89,13 +130,20 @@ export function useSmartPrefetch({ type, enabled = true }: UseSmartPrefetchOptio
       // Count cached repositories from priority list
       return PRIORITY_REPOS.reduce((count, repoPath) => {
         const [username, repo] = repoPath.split('/');
-        const queryData = queryClient.getQueryData(['github-repo', username, repo]);
+        const queryData = queryClient.getQueryData([
+          'github-repo',
+          username,
+          repo,
+        ]);
         return queryData ? count + 1 : count;
       }, 0);
     } else {
       // Count cached profiles from priority list
       return PRIORITY_PROFILES.reduce((count, username) => {
-        const queryData = queryClient.getQueryData(['github-profile', username]);
+        const queryData = queryClient.getQueryData([
+          'github-profile',
+          username,
+        ]);
         return queryData ? count + 1 : count;
       }, 0);
     }
