@@ -9,7 +9,7 @@ import Image from "next/image";
 import { ThemeToggle } from "./ui/theme-toggle";
 
 export function Navigation() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const pathname = usePathname();
   const { toast } = useToast();
 
@@ -94,7 +94,14 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             <ThemeToggle />
 
-            {user ? (
+            {isLoading ? (
+              // Show loading skeleton for auth state
+              <div className="flex items-center space-x-3 animate-pulse">
+                <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+              </div>
+            ) : user ? (
               <div className="flex items-center space-x-3">
                 <Image
                   src={user.avatar_url || '/default-avatar.png'}

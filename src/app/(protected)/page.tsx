@@ -9,6 +9,8 @@ import { SearchToggle } from "@/components/SearchToggle";
 import { FeaturedProfiles } from "@/components/FeaturedProfiles";
 import { FeaturedRepositories } from "@/components/FeaturedRepositories";
 import { TabSelector } from "@/components/TabSelector";
+import { NoMoreContent } from "@/components/NoMoreContent";
+import { ProfileCardSkeleton, RepoCardSkeleton } from "@/components/skeletons";
 import { githubAPI } from "@/lib/github";
 import { SkipForward } from "lucide-react";
 import { AvatarWithLoading } from "@/components/ui/avatar-with-loading";
@@ -199,9 +201,8 @@ export default function HomePage() {
       {/* Rating Interface */}
       <div className="mb-12" style={{minHeight: 550}}>
         {isLoading ? (
-          <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center">
-            <div className="text-gray-500 dark:text-gray-400">Loading...</div>
-          </div>
+          // Show appropriate skeleton based on current item type
+          activeTab === 'profile' ? <ProfileCardSkeleton /> : <RepoCardSkeleton />
         ) : currentItem ? (
           <div 
             className={`max-w-4xl mx-auto transition-all duration-150 ${
@@ -235,14 +236,18 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center">
-            <div className="text-gray-500 dark:text-gray-400">
-              Click &quot;Load Random&quot; to start rating!
-            </div>
-            <Button onClick={loadNextItem} className="mt-4">
-              Load Random Profile/Repo
-            </Button>
-          </div>
+          // Use NoMoreContent component instead of generic message
+          <NoMoreContent
+            itemType={activeTab}
+            onSearchClick={() => {
+              // Focus on search toggle
+              const searchElement = document.querySelector('[data-search-toggle]');
+              if (searchElement) {
+                (searchElement as HTMLElement).focus();
+              }
+            }}
+            onRefreshClick={loadNextItem}
+          />
         )}
       </div>
 

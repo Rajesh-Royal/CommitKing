@@ -59,8 +59,9 @@ export function SearchToggle({ onSearch, isLoading }: SearchToggleProps) {
           }
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 rounded-lg transition-all"
+          className="w-full pl-10 pr-4 py-3 rounded-lg transition-all search-toggle"
           disabled={isLoading}
+          data-search-toggle
         />
         <Button
           type="submit"

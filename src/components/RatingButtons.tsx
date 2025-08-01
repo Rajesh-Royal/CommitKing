@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Loader } from "lucide-react";
+import { AlreadyRated } from "@/components/AlreadyRated";
 
 interface RatingButtonsProps {
   githubId: string;
@@ -97,6 +98,16 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
 
   const isDisabled = !user || userRating?.hasRated || ratingMutation.isPending || disabled;
 
+  // If user has already rated, show the AlreadyRated component instead
+  if (userRating?.hasRated && userRating.rating) {
+    return (
+      <AlreadyRated 
+        rating={userRating.rating as 'hotty' | 'notty'} 
+        itemType={type} 
+      />
+    );
+  }
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-6">
       <Loader className={`animate-spin repeat-infinite mx-auto -mt-4 ${isFetchingUserRating ? 'block' : 'hidden'}`}/>
@@ -119,12 +130,6 @@ export function RatingButtons({ githubId, type, onRated, disabled = false }: Rat
           <span>Hotty</span>
         </Button>
       </div>
-      
-      {userRating?.hasRated && (
-        <div className="text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
-          You rated this {type} as {userRating.rating === 'hotty' ? '🔥 Hotty' : '🧊 Notty'}
-        </div>
-      )}
       
       {!user && (
         <div className="text-center mt-4 text-sm text-gray-500 dark:text-gray-400">

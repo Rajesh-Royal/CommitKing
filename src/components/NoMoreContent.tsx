@@ -38,12 +38,12 @@ export function NoMoreContent({ itemType, onSearchClick, onRefreshClick }: NoMor
             </Button>
           )}
           
-          {onRefreshClick && (
+          {/* {onRefreshClick && (
             <Button variant="outline" onClick={onRefreshClick} className="w-full">
               <RefreshCw className="mr-2 h-4 w-4" />
               Start Over
             </Button>
-          )}
+          )} */}
         </div>
         
         <div className="text-xs text-muted-foreground pt-2 border-t">

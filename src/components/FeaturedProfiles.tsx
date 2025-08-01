@@ -5,6 +5,7 @@ import { Flame, Snowflake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { githubAPI } from "@/lib/github";
 import { AvatarWithLoading } from "@/components/ui/avatar-with-loading";
+import { FeaturedContentSkeleton } from "@/components/skeletons";
 
 interface LeaderboardEntry {
   id: string;
@@ -97,18 +98,7 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
   const displayProfiles = (featuredProfiles && featuredProfiles.length > 0) ? featuredProfiles : fallbackProfiles;
 
   if (isLoading) {
-    return (
-      <section className="mb-12">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            🏆 Top Rated Developers
-          </h2>
-          <div className="text-center text-gray-500 dark:text-gray-400">
-            Loading featured developers...
-          </div>
-        </div>
-      </section>
-    );
+    return <FeaturedContentSkeleton />;
   }
 
   return (

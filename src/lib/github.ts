@@ -70,9 +70,12 @@ class GitHubAPI {
 
     return response.json();
   }
-
-  async getUser(username: string): Promise<GitHubUser> {
-    return this.fetchWithAuth(`${GITHUB_API_BASE}/users/${username}`);
+  async getUser(username: string | number): Promise<GitHubUser> {
+    const isNumber = typeof username === 'number' || /^\d+$/.test(String(username));
+    const endpoint = isNumber
+      ? `${GITHUB_API_BASE}/user/${username}`
+      : `${GITHUB_API_BASE}/users/${username}`;
+    return this.fetchWithAuth(endpoint);
   }
 
   async getRepo(owner: string, repo: string): Promise<GitHubRepo> {
