@@ -40,9 +40,9 @@ pnpm install
 
 1. Copy the example env file:
    ```bash
-   cp .env.example .env.local
+   cp .example.env .env
    ```
-2. Fill in your Supabase credentials and any other required values in `.env.local`.
+2. Fill in your Supabase credentials and any other required values in `.env`.
 
 ---
 
@@ -100,7 +100,7 @@ Visit [http://localhost:3000](http://localhost:3000) in your browser.
 ## 10. Troubleshooting
 
 - If you have issues, check your Node.js and pnpm versions
-- Ensure your `.env.local` is correctly configured
+- Ensure your `.env` is correctly configured
 - Check open issues or discussions for help
 
 ---
