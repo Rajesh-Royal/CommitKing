@@ -10,6 +10,17 @@ Before making changes, always:
 1. **Request Analysis**: Understand the task type, frameworks involved, and explicit/implicit requirements
 2. **Solution Planning**: Break down into logical steps, consider modularity and reusability
 3. **Implementation Strategy**: Choose appropriate patterns, consider performance and error handling
+4. **TODO Creation**: Create explicit TODO lists for user requests instead of assuming additional features
+5. **User Confirmation**: Ask user before adding features not explicitly requested
+
+### Task Management Protocol
+- **TODO Lists**: Always create markdown TODO lists for complex tasks with clear acceptance criteria
+- **Sequential Implementation**: Implement tasks one by one, marking completed items
+- **User-Driven Features**: Only implement what user explicitly requests, no assumptions
+- **Progress Tracking**: Update TODO status as tasks are completed
+4. **TODO Creation**: Create explicit TODO lists for user requests instead of assuming additional features
+5. **User Confirmation**: Ask user before adding features not explicitly requested
+
 
 ### Code Standards
 - **Package Manager**: Always use `pnpm` (never npm/yarn)
