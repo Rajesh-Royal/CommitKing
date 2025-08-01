@@ -66,7 +66,11 @@ export class DbStorage implements IStorage {
     const result = await db.insert(ratings).values(rating).returning();
 
     // Update leaderboard cache
-    await this.updateRatingCounts(rating.github_id, rating.type);
+    await this.updateRatingCounts(
+      rating.github_id,
+      rating.type,
+      rating.github_username
+    );
 
     return result[0];
   }
@@ -140,7 +144,8 @@ export class DbStorage implements IStorage {
 
   private async updateRatingCounts(
     githubId: string,
-    type: string
+    type: string,
+    githubUsername?: string | null
   ): Promise<void> {
     const counts = await this.getRatingCounts(githubId, type);
 
@@ -150,6 +155,7 @@ export class DbStorage implements IStorage {
       type,
       hotty_count: counts.hotty,
       notty_count: counts.notty,
+      username: githubUsername,
     });
   }
 }
