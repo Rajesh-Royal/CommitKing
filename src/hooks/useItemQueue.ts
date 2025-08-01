@@ -1,3 +1,4 @@
+// Fix the infinite API calls when user load the page first time
 import { debugLog } from '@/utils/debugLog';
 import { preloadGitHubAvatar } from '@/utils/imageUtils';
 import { useQueryClient } from '@tanstack/react-query';
