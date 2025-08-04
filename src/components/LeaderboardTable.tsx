@@ -4,6 +4,7 @@ import { GitBranch, User } from 'lucide-react';
 import { useState } from 'react';
 
 import { LeaderboardTableSkeleton } from '@/components/skeletons';
+import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -22,11 +23,20 @@ interface LeaderboardEntry {
 export function LeaderboardTable() {
   const [type, setType] = useState<LeaderboardType>('profile');
 
-  const { data: leaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
+  const { data: rawLeaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['/api/leaderboard', type],
     staleTime: 60 * 1000, // 1 minute
     gcTime: 60 * 1000, // 1 minute
   });
+
+  // Ensure avatar_url is present for each entry
+  const leaderboard =
+    rawLeaderboard?.map(entry => ({
+      ...entry,
+      avatar_url:
+        entry.avatar_url ||
+        `https://avatars.githubusercontent.com/u/${entry.github_id}?s=64&v=4`,
+    })) ?? [];
 
   const getRankEmoji = (index: number) => {
     switch (index) {
@@ -135,10 +145,13 @@ export function LeaderboardTable() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               {entry.avatar_url && (
-                                <img
+                                <AvatarWithLoading
                                   src={entry.avatar_url}
-                                  alt="Avatar"
-                                  className="w-10 h-10 rounded-full mr-3"
+                                  alt={`${entry.username || entry.github_id} avatar`}
+                                  username={entry.username || entry.github_id}
+                                  type={type === 'profile' ? 'user' : 'repo'}
+                                  size="md"
+                                  className="mr-3"
                                 />
                               )}
                               <div>

@@ -15,10 +15,12 @@ interface RatingButtonsProps {
   type: 'profile' | 'repo';
   onRated?: () => void;
   disabled?: boolean;
+  gitUserName: string;
 }
 
 export function RatingButtons({
   githubId,
+  gitUserName,
   type,
   onRated,
   disabled = false,
@@ -74,10 +76,7 @@ export function RatingButtons({
       return apiRequest('POST', '/api/ratings', {
         user_id: user.id, // Supabase user ID
         github_id: githubId,
-        github_username:
-          user.user_metadata.user_name ||
-          user.user_metadata.preferred_username ||
-          '',
+        github_username: gitUserName || '',
         full_name:
           user.user_metadata.full_name || user.user_metadata.name || '',
         type,

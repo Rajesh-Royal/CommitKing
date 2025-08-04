@@ -245,6 +245,11 @@ export default function HomePage() {
                   ? profileData?.id?.toString() || ''
                   : repoData?.id?.toString() || ''
               }
+              gitUserName={
+                currentItem.type === 'profile'
+                  ? profileData?.name?.toString() || ''
+                  : repoData?.full_name?.toString() || ''
+              }
               type={currentItem.type}
               onRated={handleRated}
               disabled={isTransitioning}
