@@ -243,7 +243,7 @@ export default function HomePage() {
               githubId={
                 currentItem.type === 'profile'
                   ? profileData?.id?.toString() || ''
-                  : repoData?.id?.toString() || ''
+                  : repoData?.owner?.id?.toString() || ''
               }
               gitUserName={
                 currentItem.type === 'profile'

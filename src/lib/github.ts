@@ -23,6 +23,7 @@ interface GitHubRepo {
   owner: {
     login: string;
     avatar_url: string;
+    id: number;
   };
 }
 
