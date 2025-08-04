@@ -1,26 +1,31 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { ProfileCard } from "@/components/ProfileCard";
-import { RatingButtons } from "@/components/RatingButtons";
-import { SearchToggle } from "@/components/SearchToggle";
-import { FeaturedProfiles } from "@/components/FeaturedProfiles";
-import { FeaturedRepositories } from "@/components/FeaturedRepositories";
-import { TabSelector } from "@/components/TabSelector";
-import { NoMoreContent } from "@/components/NoMoreContent";
-import { ProfileCardSkeleton, RepoCardSkeleton } from "@/components/skeletons";
-import { githubAPI } from "@/lib/github";
-import { SkipForward } from "lucide-react";
-import { AvatarWithLoading } from "@/components/ui/avatar-with-loading";
-import { useItemQueue } from "@/hooks/useItemQueue";
-import { useGitHubErrorHandler } from "@/hooks/useGitHubErrorHandler";
+import { useQuery } from '@tanstack/react-query';
+import { SkipForward } from 'lucide-react';
+
+import { useEffect, useState } from 'react';
+
+import { FeaturedProfiles } from '@/components/FeaturedProfiles';
+import { FeaturedRepositories } from '@/components/FeaturedRepositories';
+import { NoMoreContent } from '@/components/NoMoreContent';
+import { ProfileCard } from '@/components/ProfileCard';
+import { RatingButtons } from '@/components/RatingButtons';
+import { SearchToggle } from '@/components/SearchToggle';
+import { TabSelector } from '@/components/TabSelector';
+import { ProfileCardSkeleton, RepoCardSkeleton } from '@/components/skeletons';
+import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
+import { Button } from '@/components/ui/button';
+
+import { useGitHubErrorHandler } from '@/hooks/useGitHubErrorHandler';
+import { useItemQueue } from '@/hooks/useItemQueue';
+
+import { githubAPI } from '@/lib/github';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'repo'>('profile');
   const {
     currentItem,
+    isLoading: queueLoading,
     isTransitioning,
     initializeQueue,
     transitionToNext,
@@ -129,8 +134,19 @@ export default function HomePage() {
     transitionToNext(200);
   };
 
-  const isLoading = (profileLoading || repoLoading) && !isTransitioning;
-  const totalContributions = contributions?.reduce((sum, day) => sum + day.count, 0) || 0;
+  const isLoading =
+    queueLoading || ((profileLoading || repoLoading) && !isTransitioning);
+  const totalContributions =
+    contributions?.reduce((sum, day) => sum + day.count, 0) || 0;
+
+  // Show loading when queue is loading or when we have a current item but data is loading
+  const shouldShowLoading =
+    queueLoading ||
+    (currentItem && (profileLoading || repoLoading) && !isTransitioning);
+
+  // Show NoMoreContent only when queue is not loading, no current item, and not transitioning
+  const shouldShowNoMoreContent =
+    !queueLoading && !currentItem && !isTransitioning;
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -141,9 +157,11 @@ export default function HomePage() {
             Rate GitHub Profiles & Repos
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-            Discover amazing developers and repositories. Vote 🔥 <strong>Hotty</strong> or 🧊 <strong>Notty</strong> and explore the community!
+            Discover amazing developers and repositories. Vote 🔥{' '}
+            <strong>Hotty</strong> or 🧊 <strong>Notty</strong> and explore the
+            community!
           </p>
-          
+
           <SearchToggle onSearch={handleSearch} isLoading={isSearching} />
         </div>
       </section>
@@ -155,7 +173,7 @@ export default function HomePage() {
             Search Results
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {searchResults.slice(0, 6).map((result) => (
+            {searchResults.slice(0, 6).map(result => (
               <div
                 key={result.id}
                 className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer"
@@ -199,12 +217,16 @@ export default function HomePage() {
       </div>
 
       {/* Rating Interface */}
-      <div className="mb-12" style={{minHeight: 550}}>
-        {isLoading ? (
+      <div className="mb-12" style={{ minHeight: 560 }}>
+        {shouldShowLoading ? (
           // Show appropriate skeleton based on current item type
-          activeTab === 'profile' ? <ProfileCardSkeleton /> : <RepoCardSkeleton />
+          activeTab === 'profile' ? (
+            <ProfileCardSkeleton />
+          ) : (
+            <RepoCardSkeleton />
+          )
         ) : currentItem ? (
-          <div 
+          <div
             className={`max-w-4xl mx-auto transition-all duration-150 ${
               isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
             }`}
@@ -218,7 +240,11 @@ export default function HomePage() {
               isTransitioning={isTransitioning}
             />
             <RatingButtons
-              githubId={currentItem.type === 'profile' ? profileData?.id?.toString() || '' : repoData?.id?.toString() || ''}
+              githubId={
+                currentItem.type === 'profile'
+                  ? profileData?.id?.toString() || ''
+                  : repoData?.id?.toString() || ''
+              }
               type={currentItem.type}
               onRated={handleRated}
               disabled={isTransitioning}
@@ -235,20 +261,22 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-        ) : (
-          // Use NoMoreContent component instead of generic message
+        ) : shouldShowNoMoreContent ? (
+          // Use NoMoreContent component only when truly no more content available
           <NoMoreContent
             itemType={activeTab}
             onSearchClick={() => {
               // Focus on search toggle
-              const searchElement = document.querySelector('[data-search-toggle]');
+              const searchElement = document.querySelector(
+                '[data-search-toggle]'
+              );
               if (searchElement) {
                 (searchElement as HTMLElement).focus();
               }
             }}
             onRefreshClick={loadNextItem}
           />
-        )}
+        ) : null}
       </div>
 
       {/* Featured Content */}
