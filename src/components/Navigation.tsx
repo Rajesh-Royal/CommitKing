@@ -1,5 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Github, Home, Menu, Trophy, User } from 'lucide-react';
+import { Github, Home, Loader2, Menu, Trophy, User } from 'lucide-react';
+
+import { useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -25,25 +27,33 @@ export function Navigation() {
   const { user, logout, isLoading } = useAuth();
   const pathname = usePathname();
   const { toast } = useToast();
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleGitHubAuth = async () => {
+    setIsSigningIn(true);
     toast({
       title: 'Sign In clicked',
       description: 'Redirecting to GitHub login...',
       variant: 'default',
     });
-    try {
-      await signInWithGitHub();
-      // The user will be redirected to GitHub OAuth and then back to /auth/callback
-    } catch (error) {
-      console.error('GitHub auth error:', error);
-      toast({
-        title: 'Authentication failed',
-        description:
-          error instanceof Error ? error.message : 'Please try again.',
-        variant: 'destructive',
-      });
-    }
+
+    // Do not block the UI with a loading state
+    setTimeout(async () => {
+      try {
+        await signInWithGitHub();
+        // The user will be redirected to GitHub OAuth and then back to /auth/callback
+      } catch (error) {
+        console.error('GitHub auth error:', error);
+        toast({
+          title: 'Authentication failed',
+          description:
+            error instanceof Error ? error.message : 'Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsSigningIn(false);
+      }
+    }, 1000);
   };
 
   const handleLogout = async () => {
@@ -224,9 +234,14 @@ export function Navigation() {
                   variant="default"
                   onClick={handleGitHubAuth}
                   className="hidden sm:flex"
+                  disabled={isSigningIn}
                 >
-                  <Github className="w-4 h-4 mr-2" />
-                  Sign in with GitHub
+                  {isSigningIn ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Github className="w-4 h-4 mr-2" />
+                  )}
+                  {isSigningIn ? 'Signing in...' : 'Sign in with GitHub'}
                 </Button>
 
                 {/* Mobile Sign In and Menu */}
@@ -235,8 +250,13 @@ export function Navigation() {
                     variant="default"
                     onClick={handleGitHubAuth}
                     size="sm"
+                    disabled={isSigningIn}
                   >
-                    Sign In
+                    {isSigningIn ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Sign In'
+                    )}
                   </Button>
                   <Sheet>
                     <SheetTrigger asChild>
@@ -265,9 +285,16 @@ export function Navigation() {
                             variant="default"
                             onClick={handleGitHubAuth}
                             className="w-full justify-start"
+                            disabled={isSigningIn}
                           >
-                            <Github className="w-4 h-4 mr-2" />
-                            Sign in with GitHub
+                            {isSigningIn ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Github className="w-4 h-4 mr-2" />
+                            )}
+                            {isSigningIn
+                              ? 'Signing in...'
+                              : 'Sign in with GitHub'}
                           </Button>
                         </div>
                       </div>
