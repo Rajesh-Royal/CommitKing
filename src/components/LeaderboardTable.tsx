@@ -1,9 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ExternalLink, User, GitBranch } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery } from '@tanstack/react-query';
+import { GitBranch, User } from 'lucide-react';
+
+import { useState } from 'react';
+
+import { LeaderboardTableSkeleton } from '@/components/skeletons';
+import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 type LeaderboardType = 'profile' | 'repo';
 
@@ -20,16 +23,31 @@ interface LeaderboardEntry {
 export function LeaderboardTable() {
   const [type, setType] = useState<LeaderboardType>('profile');
 
-  const { data: leaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
+  const { data: rawLeaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['/api/leaderboard', type],
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 60 * 1000, // 1 minute
   });
+
+  // Ensure avatar_url is present for each entry
+  const leaderboard =
+    rawLeaderboard?.map(entry => ({
+      ...entry,
+      avatar_url:
+        entry.avatar_url ||
+        `https://avatars.githubusercontent.com/u/${entry.github_id}?s=64&v=4`,
+    })) ?? [];
 
   const getRankEmoji = (index: number) => {
     switch (index) {
-      case 0: return '🥇';
-      case 1: return '🥈';
-      case 2: return '🥉';
-      default: return '';
+      case 0:
+        return '🥇';
+      case 1:
+        return '🥈';
+      case 2:
+        return '🥉';
+      default:
+        return '';
     }
   };
 
@@ -75,91 +93,108 @@ export function LeaderboardTable() {
       </div>
 
       {/* Leaderboard Table */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              Loading leaderboard...
-            </div>
-          ) : !leaderboard || leaderboard.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              No leaderboard data available yet. Start rating to build the leaderboard!
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Rank
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      {type === 'profile' ? 'Profile' : 'Repository'}
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      🔥 Hotty
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      🧊 Notty
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Score
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {leaderboard.map((entry: LeaderboardEntry, index: number) => (
-                    <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <span className="text-2xl mr-2">{getRankEmoji(index)}</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {index + 1}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {entry.avatar_url && (
-                            <img
-                              src={entry.avatar_url}
-                              alt="Avatar"
-                              className="w-10 h-10 rounded-full mr-3"
-                            />
-                          )}
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              {entry.username || entry.github_id}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {type === 'profile' ? 'Developer' : 'Repository'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="text-lg font-bold text-orange-500">
-                          {entry.hotty_count.toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="text-lg font-bold text-blue-400">
-                          {entry.notty_count.toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="text-lg font-bold text-green-500">
-                          {getScorePercentage(entry.hotty_count, entry.notty_count)}%
-                        </span>
-                      </td>
+      {isLoading ? (
+        <LeaderboardTableSkeleton />
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            {!leaderboard || leaderboard.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                No leaderboard data available yet. Start rating to build the
+                leaderboard!
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Rank
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        {type === 'profile' ? 'Profile' : 'Repository'}
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        🔥 Hotty
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        🧊 Notty
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Score
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {leaderboard.map(
+                      (entry: LeaderboardEntry, index: number) => (
+                        <tr
+                          key={entry.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <span className="text-2xl mr-2">
+                                {getRankEmoji(index)}
+                              </span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {index + 1}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              {entry.avatar_url && (
+                                <AvatarWithLoading
+                                  src={entry.avatar_url}
+                                  alt={`${entry.username || entry.github_id} avatar`}
+                                  username={entry.username || entry.github_id}
+                                  type={type === 'profile' ? 'user' : 'repo'}
+                                  size="md"
+                                  className="mr-3"
+                                />
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {entry.username || entry.github_id}
+                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  {type === 'profile'
+                                    ? 'Developer'
+                                    : 'Repository'}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className="text-lg font-bold text-orange-500">
+                              {entry.hotty_count.toLocaleString()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className="text-lg font-bold text-blue-400">
+                              {entry.notty_count.toLocaleString()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className="text-lg font-bold text-green-500">
+                              {getScorePercentage(
+                                entry.hotty_count,
+                                entry.notty_count
+                              )}
+                              %
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

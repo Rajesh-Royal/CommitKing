@@ -1,11 +1,13 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Flame, Snowflake } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { githubAPI } from "@/lib/github";
-import { AvatarWithLoading } from "@/components/ui/avatar-with-loading";
-import { FeaturedContentSkeleton } from "@/components/skeletons";
+import { useQuery } from '@tanstack/react-query';
+import { Flame, Snowflake } from 'lucide-react';
+
+import { FeaturedContentSkeleton } from '@/components/skeletons';
+import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+
+import { githubAPI } from '@/lib/github';
 
 interface LeaderboardEntry {
   id: string;
@@ -42,14 +44,16 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
 
       const top3 = leaderboard.slice(0, 3);
       const profiles = await Promise.all(
-        top3.map(async (entry) => {
+        top3.map(async entry => {
           try {
             // Fetch real GitHub profile data
             const githubProfile = await githubAPI.getUser(entry.github_id);
             return {
               username: githubProfile.login,
               avatar_url: githubProfile.avatar_url,
-              bio: githubProfile.bio || `${githubProfile.public_repos} public repositories`,
+              bio:
+                githubProfile.bio ||
+                `${githubProfile.public_repos} public repositories`,
               hotty_count: entry.hotty_count,
               notty_count: entry.notty_count,
             };
@@ -57,7 +61,9 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
             // Fallback if GitHub API fails
             return {
               username: entry.github_id,
-              avatar_url: entry.avatar_url || `https://avatars.githubusercontent.com/u/${entry.github_id}?v=4`,
+              avatar_url:
+                entry.avatar_url ||
+                `https://avatars.githubusercontent.com/u/${entry.github_id}?v=4`,
               bio: 'GitHub Developer',
               hotty_count: entry.hotty_count,
               notty_count: entry.notty_count,
@@ -92,10 +98,13 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
       bio: 'React & Next.js developer',
       hotty_count: 1500,
       notty_count: 203,
-    }
+    },
   ];
 
-  const displayProfiles = (featuredProfiles && featuredProfiles.length > 0) ? featuredProfiles : fallbackProfiles;
+  const displayProfiles =
+    featuredProfiles && featuredProfiles.length > 0
+      ? featuredProfiles
+      : fallbackProfiles;
 
   if (isLoading) {
     return <FeaturedContentSkeleton />;
@@ -121,7 +130,7 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
                 </div>
               )}
               <CardContent className="p-6">
-                <div className="flex items-center space-x-3 mb-4">
+                <div className="flex items-start space-x-3 mb-4">
                   <AvatarWithLoading
                     src={profile.avatar_url}
                     alt={`${profile.username}'s avatar`}
@@ -151,14 +160,21 @@ export function FeaturedProfiles({ onProfileSelect }: FeaturedProfilesProps) {
                       {profile.notty_count.toLocaleString()}
                     </span>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                  >
                     Rate →
                   </Button>
                 </div>
 
                 {index < 3 && (
                   <div className="mt-3 text-center">
-                    <Badge variant={index === 0 ? "default" : "secondary"} className="text-xs">
+                    <Badge
+                      variant={index === 0 ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
                       #{index + 1} Developer
                     </Badge>
                   </div>

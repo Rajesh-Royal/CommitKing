@@ -6,6 +6,7 @@ import { AlreadyRated } from '@/components/AlreadyRated';
 import { Button } from '@/components/ui/button';
 
 import { useToast } from '@/hooks/use-toast';
+import { useRatingCache } from '@/hooks/useRatingCache';
 
 import { apiRequest } from '@/lib/queryClient';
 
@@ -14,10 +15,12 @@ interface RatingButtonsProps {
   type: 'profile' | 'repo';
   onRated?: () => void;
   disabled?: boolean;
+  gitUserName: string;
 }
 
 export function RatingButtons({
   githubId,
+  gitUserName,
   type,
   onRated,
   disabled = false,
@@ -25,6 +28,7 @@ export function RatingButtons({
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { getRating, setRating, hasRating, removeRating } = useRatingCache();
 
   // Get rating counts - DISABLED for performance
   // const { data: counts } = useQuery<{hotty: number; notty: number}>({
@@ -32,13 +36,37 @@ export function RatingButtons({
   //   enabled: !!githubId,
   // });
 
-  // Check if user has already rated
+  // Check cache first, then server if not cached
+  const cachedRating = getRating(type, githubId);
+  const hasCachedRating = hasRating(type, githubId);
+
+  // Check if user has already rated - only fetch from server if not in cache
   const { data: userRating, isFetching: isFetchingUserRating } = useQuery<{
     hasRated: boolean;
     rating?: string;
   }>({
     queryKey: ['/api/ratings/user', user?.id, 'check', githubId, type],
-    enabled: !!user && !!githubId,
+    queryFn: async () => {
+      const response = await apiRequest(
+        'GET',
+        `/api/ratings/user/${user?.id}/check/${githubId}/${type}`
+      );
+      const data = await response.json();
+
+      // Update cache with server response
+      if (data.hasRated && data.rating) {
+        setRating(type, githubId, data.rating as 'hotty' | 'notty');
+      }
+
+      return data;
+    },
+    enabled: !!user && !!githubId && !hasCachedRating, // Only fetch if not cached
+    initialData: hasCachedRating
+      ? {
+          hasRated: true,
+          rating: cachedRating || undefined,
+        }
+      : undefined,
   });
 
   const ratingMutation = useMutation({
@@ -48,10 +76,7 @@ export function RatingButtons({
       return apiRequest('POST', '/api/ratings', {
         user_id: user.id, // Supabase user ID
         github_id: githubId,
-        github_username:
-          user.user_metadata.user_name ||
-          user.user_metadata.preferred_username ||
-          '',
+        github_username: gitUserName || '',
         full_name:
           user.user_metadata.full_name || user.user_metadata.name || '',
         type,
@@ -67,6 +92,9 @@ export function RatingButtons({
           rating,
         }
       );
+
+      // Also update cache optimistically
+      setRating(type, githubId, rating);
     },
     onError: (error: Error) => {
       // Rollback optimistic updates on error
@@ -76,6 +104,9 @@ export function RatingButtons({
           hasRated: false,
         }
       );
+
+      // Remove from cache on error
+      removeRating(type, githubId);
 
       toast({
         title: 'Rating failed',
