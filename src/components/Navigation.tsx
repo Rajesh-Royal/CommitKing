@@ -19,6 +19,11 @@ export function Navigation() {
   const { toast } = useToast();
 
   const handleGitHubAuth = async () => {
+    toast({
+      title: 'Sign In clicked',
+      description: 'Redirecting to GitHub login...',
+      variant: 'default',
+    });
     try {
       await signInWithGitHub();
       // The user will be redirected to GitHub OAuth and then back to /auth/callback
