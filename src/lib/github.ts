@@ -194,6 +194,7 @@ export const PRIORITY_PROFILES = [
   'nyzss',
   't3dotgg',
   'PeerRich',
+  'surendrapandar',
   'emrysal',
   'zomars',
   'Udit-takkar',
