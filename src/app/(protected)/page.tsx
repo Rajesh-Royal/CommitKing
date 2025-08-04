@@ -149,14 +149,14 @@ export default function HomePage() {
     !queueLoading && !currentItem && !isTransitioning;
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Hero Section */}
-      <section className="text-center mb-12">
+      <section className="text-center mb-8 sm:mb-12">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Rate GitHub Profiles & Repos
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-6 sm:mb-8 px-2">
             Discover amazing developers and repositories. Vote 🔥{' '}
             <strong>Hotty</strong> or 🧊 <strong>Notty</strong> and explore the
             community!
@@ -168,15 +168,15 @@ export default function HomePage() {
 
       {/* Search Results */}
       {searchResults.length > 0 && (
-        <section className="mb-12">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <section className="mb-8 sm:mb-12">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Search Results
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
             {searchResults.slice(0, 6).map(result => (
               <div
                 key={result.id}
-                className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => {
                   if (result.login) {
                     // Profile result
