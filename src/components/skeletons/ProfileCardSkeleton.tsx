@@ -1,61 +1,92 @@
-import { Card } from '@/components/ui/card';
+import { Skeleton } from '../ui/skeleton';
 
 export function ProfileCardSkeleton() {
   return (
-    <Card className="w-full max-w-4xl mx-auto overflow-hidden">
-      <div className="p-6 animate-pulse">
-        {/* Header with avatar and basic info */}
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-full flex-shrink-0"></div>
-          <div className="flex-1 space-y-2">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2"></div>
+    <div className="w-full max-w-4xl mx-auto space-y-6">
+      {/* Main Profile Card */}
+      <div className="border rounded-lg p-6 space-y-6">
+        {/* Profile Header Section */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-4">
+            {/* Avatar */}
+            <Skeleton className="w-20 h-20 rounded-full" />
+
+            {/* Profile Info */}
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-6 w-36" />
+              <Skeleton className="h-5 w-44" />
+
+              {/* Stats */}
+              <div className="flex items-center space-x-4 pt-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
           </div>
+
+          {/* View on GitHub Button */}
+          <Skeleton className="h-10 w-36 rounded-md" />
         </div>
 
-        {/* Bio section */}
-        <div className="space-y-3 mb-6">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-5/6"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-4/6"></div>
-        </div>
+        {/* Contributions Section */}
+        <div className="border rounded-lg p-6 space-y-4">
+          {/* Contributions Title */}
+          <Skeleton className="h-6 w-64" />
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="text-center">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-md mb-1"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
-          </div>
-          <div className="text-center">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-md mb-1"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
-          </div>
-          <div className="text-center">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-md mb-1"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
-          </div>
-        </div>
-
-        {/* Contribution graph placeholder */}
-        <div className="mb-6">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md mb-3 w-1/3"></div>
-          <div className="grid grid-cols-12 gap-1">
-            {Array.from({ length: 84 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-3 bg-gray-200 dark:bg-gray-700 rounded-sm"
-              ></div>
+          {/* Month Labels */}
+          <div className="flex justify-between items-center mb-4">
+            {['Aug', 'Oct', 'Dec', 'Feb', 'Apr', 'Jun'].map((month, index) => (
+              <Skeleton key={index} className="h-4 w-8" />
             ))}
           </div>
-        </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3">
-          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg flex-1"></div>
-          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg flex-1"></div>
+          {/* Contribution Grid */}
+          <div className="space-y-1">
+            {/* Day labels and grid rows */}
+            {['Mon', 'Wed', 'Fri'].map((day, dayIndex) => (
+              <div key={dayIndex} className="flex items-center space-x-1">
+                <Skeleton className="h-3 w-8 mr-2" />
+                {/* Grid squares for each day */}
+                <div className="flex space-x-1">
+                  {Array.from({ length: 53 }).map((_, squareIndex) => (
+                    <Skeleton
+                      key={squareIndex}
+                      className="w-3 h-3 rounded-sm"
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center justify-between pt-4">
+            <Skeleton className="h-4 w-48" />
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-8" />
+              <div className="flex space-x-1">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Skeleton key={index} className="w-3 h-3 rounded-sm" />
+                ))}
+              </div>
+              <Skeleton className="h-4 w-8" />
+            </div>
+          </div>
         </div>
       </div>
-    </Card>
+
+      {/* Action Buttons - Outside the card */}
+      <div className="flex justify-center space-x-4">
+        <Skeleton className="h-12 w-32 rounded-full" />
+        <Skeleton className="h-12 w-32 rounded-full" />
+      </div>
+
+      {/* Skip Profile Link - Outside the card */}
+      <div className="flex justify-center">
+        <Skeleton className="h-5 w-28" />
+      </div>
+    </div>
   );
 }
