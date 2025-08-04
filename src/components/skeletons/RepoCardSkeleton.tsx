@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 
 export function RepoCardSkeleton() {
   return (
-    <Card className="w-full max-w-md mx-auto overflow-hidden">
+    <Card className="w-full max-w-4xl mx-auto overflow-hidden">
       <div className="p-6 animate-pulse">
         {/* Header with repo name and owner */}
         <div className="flex items-start space-x-3 mb-4">

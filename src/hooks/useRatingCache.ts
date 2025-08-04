@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
 import { debugLog } from '@/utils/debugLog';
+
+import { useCallback, useEffect, useState } from 'react';
 
 export type RatingType = 'hotty' | 'notty';
 
@@ -27,7 +28,10 @@ class RatingCache {
         const now = Date.now();
         Object.entries(data).forEach(([key, value]) => {
           const cachedRating = value as CachedRating;
-          if (cachedRating.timestamp && (now - cachedRating.timestamp) < this.CACHE_EXPIRY) {
+          if (
+            cachedRating.timestamp &&
+            now - cachedRating.timestamp < this.CACHE_EXPIRY
+          ) {
             this.cache.set(key, cachedRating);
           }
         });
@@ -50,11 +54,11 @@ class RatingCache {
   getRating(itemType: 'profile' | 'repo', itemId: string): RatingType | null {
     const key = `${itemType}:${itemId}`;
     const cached = this.cache.get(key);
-    
+
     if (cached) {
       // Check if cache entry is still valid
       const now = Date.now();
-      if ((now - cached.timestamp) < this.CACHE_EXPIRY) {
+      if (now - cached.timestamp < this.CACHE_EXPIRY) {
         debugLog.cache.hit('rating', 1);
         return cached.rating;
       } else {
@@ -63,7 +67,7 @@ class RatingCache {
         this.saveToStorage();
       }
     }
-    
+
     debugLog.cache.miss('rating', key);
     return null;
   }
@@ -74,7 +78,7 @@ class RatingCache {
       rating,
       timestamp: Date.now(),
     };
-    
+
     this.cache.set(key, cachedRating);
     this.saveToStorage();
     debugLog.info(`Set rating cache: ${key} = ${rating}`);
@@ -82,6 +86,15 @@ class RatingCache {
 
   hasRating(itemType: 'profile' | 'repo', itemId: string): boolean {
     return this.getRating(itemType, itemId) !== null;
+  }
+
+  removeRating(itemType: 'profile' | 'repo', itemId: string): void {
+    const key = `${itemType}:${itemId}`;
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+      this.saveToStorage();
+      debugLog.info(`Removed rating cache: ${key}`);
+    }
   }
 
   clear() {
@@ -106,18 +119,35 @@ const ratingCache = new RatingCache();
 export function useRatingCache() {
   const [cacheSize, setCacheSize] = useState(ratingCache.size());
 
-  const getRating = useCallback((itemType: 'profile' | 'repo', itemId: string): RatingType | null => {
-    return ratingCache.getRating(itemType, itemId);
-  }, []);
+  const getRating = useCallback(
+    (itemType: 'profile' | 'repo', itemId: string): RatingType | null => {
+      return ratingCache.getRating(itemType, itemId);
+    },
+    []
+  );
 
-  const setRating = useCallback((itemType: 'profile' | 'repo', itemId: string, rating: RatingType) => {
-    ratingCache.setRating(itemType, itemId, rating);
-    setCacheSize(ratingCache.size());
-  }, []);
+  const setRating = useCallback(
+    (itemType: 'profile' | 'repo', itemId: string, rating: RatingType) => {
+      ratingCache.setRating(itemType, itemId, rating);
+      setCacheSize(ratingCache.size());
+    },
+    []
+  );
 
-  const hasRating = useCallback((itemType: 'profile' | 'repo', itemId: string): boolean => {
-    return ratingCache.hasRating(itemType, itemId);
-  }, []);
+  const hasRating = useCallback(
+    (itemType: 'profile' | 'repo', itemId: string): boolean => {
+      return ratingCache.hasRating(itemType, itemId);
+    },
+    []
+  );
+
+  const removeRating = useCallback(
+    (itemType: 'profile' | 'repo', itemId: string) => {
+      ratingCache.removeRating(itemType, itemId);
+      setCacheSize(ratingCache.size());
+    },
+    []
+  );
 
   const clearCache = useCallback(() => {
     ratingCache.clear();
@@ -148,6 +178,7 @@ export function useRatingCache() {
     getRating,
     setRating,
     hasRating,
+    removeRating,
     clearCache,
     cacheSize,
     getCacheStats,

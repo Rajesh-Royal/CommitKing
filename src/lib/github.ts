@@ -23,6 +23,7 @@ interface GitHubRepo {
   owner: {
     login: string;
     avatar_url: string;
+    id: number;
   };
 }
 
@@ -40,6 +41,7 @@ class GitHubAPI {
       ...options,
       headers: {
         Accept: 'application/vnd.github.v3+json',
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_AUTH_TOKEN}`,
         'User-Agent': 'CommitKings',
         ...options.headers,
       },
@@ -192,6 +194,7 @@ export const PRIORITY_PROFILES = [
   'nyzss',
   't3dotgg',
   'PeerRich',
+  'surendrapandar',
   'emrysal',
   'zomars',
   'Udit-takkar',
@@ -214,7 +217,6 @@ export const PRIORITY_PROFILES = [
   'joschan21',
   'AntonioErdeljac',
   'adrianhajdin',
-  'payloadcms',
   'shadcn',
   'OpenPipe',
   'vinta',
@@ -240,12 +242,7 @@ export const PRIORITY_REPOS = [
   'FFmpeg/FFmpeg',
   'yt-dlp/yt-dlp',
   'shadcn-ui/ui',
-  'Tyrrrz/YoutubeDownloader',
-  'taqui-786/Portfolio',
-  'joschan21/digitalhippo',
-  'AntonioErdeljac/next13-discord-clone',
   'adrianhajdin/ecommerce',
-  'payloadcms/payload',
   'shadcn/taxonomy',
   'OpenPipe/ART',
   'vinta/awesome-python',
