@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 import { ContributionGraph } from './ContributionGraph';
+import { ShareButtons } from './ShareButtons';
 
 interface Profile {
   id: number;
@@ -100,16 +101,23 @@ export function ProfileCard({
                 </div>
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => window.open(profile.html_url, '_blank')}
-              className="flex items-center self-center sm:self-auto text-sm"
-              size="sm"
-            >
-              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-              <span className="hidden sm:inline">View on GitHub</span>
-              <span className="sm:hidden">GitHub</span>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => window.open(profile.html_url, '_blank')}
+                className="flex items-center self-center sm:self-auto text-sm"
+                size="sm"
+              >
+                <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                <span className="hidden sm:inline">View on GitHub</span>
+                <span className="sm:hidden">GitHub</span>
+              </Button>
+              <ShareButtons
+                type="profile"
+                id={profile.login}
+                username={profile.login}
+              />
+            </div>
           </div>
         </div>
 
@@ -151,16 +159,23 @@ export function ProfileCard({
                 )}
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => window.open(repository.html_url, '_blank')}
-              className="flex items-center self-center sm:self-auto text-sm"
-              size="sm"
-            >
-              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-              <span className="hidden sm:inline">View on GitHub</span>
-              <span className="sm:hidden">GitHub</span>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => window.open(repository.html_url, '_blank')}
+                className="flex items-center self-center sm:self-auto text-sm"
+                size="sm"
+              >
+                <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                <span className="hidden sm:inline">View on GitHub</span>
+                <span className="sm:hidden">GitHub</span>
+              </Button>
+              <ShareButtons
+                type="repo"
+                id={repository.full_name}
+                repoName={repository.name}
+              />
+            </div>
           </div>
         </div>
 

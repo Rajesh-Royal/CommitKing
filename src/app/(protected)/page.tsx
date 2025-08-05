@@ -3,7 +3,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { SkipForward } from 'lucide-react';
 
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
+
+import { useSearchParams } from 'next/navigation';
 
 import { FeaturedProfiles } from '@/components/FeaturedProfiles';
 import { FeaturedRepositories } from '@/components/FeaturedRepositories';
@@ -21,7 +24,8 @@ import { useItemQueue } from '@/hooks/useItemQueue';
 
 import { githubAPI } from '@/lib/github';
 
-export default function HomePage() {
+function HomePageContent() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'profile' | 'repo'>('profile');
   const {
     currentItem,
@@ -39,10 +43,29 @@ export default function HomePage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Initialize queue on mount and when tab changes
+  // Handle URL parameters on initial load or initialize queue
   useEffect(() => {
-    initializeQueue();
-  }, [initializeQueue, activeTab]);
+    const type = searchParams.get('type') as 'profile' | 'repo' | null;
+    const val = searchParams.get('val');
+
+    if (type && val && (type === 'profile' || type === 'repo')) {
+      setActiveTab(type);
+      setSpecificItem({ type, id: val });
+    } else {
+      initializeQueue();
+    }
+  }, [searchParams, setSpecificItem, initializeQueue]);
+
+  // Initialize queue when tab changes (but not on initial load if we have URL params)
+  useEffect(() => {
+    const type = searchParams.get('type');
+    const val = searchParams.get('val');
+
+    // Only initialize queue if we don't have URL params
+    if (!type || !val) {
+      initializeQueue();
+    }
+  }, [activeTab, initializeQueue, searchParams]);
 
   const handleTabChange = (tab: 'profile' | 'repo') => {
     setActiveTab(tab);
@@ -291,5 +314,13 @@ export default function HomePage() {
         <FeaturedRepositories onRepositorySelect={handleRepositorySelect} />
       )}
     </main>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }
