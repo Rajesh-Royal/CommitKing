@@ -16,6 +16,9 @@ export async function generateMetadata({
   const { type, id } = await params;
   const decodedId = decodeURIComponent(id);
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const ogImageUrl = `${baseUrl}/api/og?type=${type}&id=${encodeURIComponent(decodedId)}`;
+
   try {
     if (type === 'profile') {
       const profile = await githubAPI.getUser(decodedId);
@@ -27,20 +30,20 @@ export async function generateMetadata({
           description: `${profile.bio || 'A talented developer'} - Vote 🔥 or 🧊`,
           images: [
             {
-              url: profile.avatar_url,
-              width: 400,
-              height: 400,
-              alt: `${profile.login}'s avatar`,
+              url: ogImageUrl,
+              width: 1200,
+              height: 630,
+              alt: `${profile.login}'s profile preview`,
             },
           ],
           type: 'website',
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/share/${type}/${id}`,
+          url: `${baseUrl}/share/${type}/${id}`,
         },
         twitter: {
           card: 'summary_large_image',
           title: `Rate ${profile.name || profile.login}'s Profile`,
           description: `${profile.bio || 'A talented developer'}`,
-          images: [profile.avatar_url],
+          images: [ogImageUrl],
         },
       };
     } else if (type === 'repo') {
@@ -54,20 +57,20 @@ export async function generateMetadata({
           description: `${repository.description || 'An interesting project'} - Vote 🔥 or 🧊`,
           images: [
             {
-              url: repository.owner.avatar_url,
-              width: 400,
-              height: 400,
-              alt: `${repository.owner.login}'s avatar`,
+              url: ogImageUrl,
+              width: 1200,
+              height: 630,
+              alt: `${repository.full_name} repository preview`,
             },
           ],
           type: 'website',
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/share/${type}/${id}`,
+          url: `${baseUrl}/share/${type}/${id}`,
         },
         twitter: {
           card: 'summary_large_image',
           title: `Rate ${repository.name} Repository`,
           description: `${repository.description || 'An interesting project'}`,
-          images: [repository.owner.avatar_url],
+          images: [ogImageUrl],
         },
       };
     }
