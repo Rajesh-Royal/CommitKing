@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 
 import { githubAPI } from '@/lib/github';
+
+import SharePageLoader from './_components/SharePageLoader';
 
 interface SharePageProps {
   params: Promise<{
@@ -89,6 +90,6 @@ export default async function SharePage({ params }: SharePageProps) {
   const { type, id } = await params;
   const decodedId = decodeURIComponent(id);
 
-  // Redirect to main page with query parameters
-  redirect(`/?type=${type}&val=${encodeURIComponent(decodedId)}`);
+  // Show loading component that will handle the redirect client-side
+  return <SharePageLoader type={type as 'profile' | 'repo'} id={decodedId} />;
 }

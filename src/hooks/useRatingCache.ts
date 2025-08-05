@@ -1,3 +1,5 @@
+'use client';
+
 import { debugLog } from '@/utils/debugLog';
 
 import { useCallback, useEffect, useState } from 'react';
@@ -21,7 +23,10 @@ class RatingCache {
 
   private loadFromStorage() {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
+      const stored =
+        typeof window !== 'undefined' &&
+        window.localStorage &&
+        localStorage.getItem(this.STORAGE_KEY);
       if (stored) {
         const data = JSON.parse(stored);
         // Convert back to Map and filter expired entries
