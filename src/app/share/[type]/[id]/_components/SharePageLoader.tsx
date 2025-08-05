@@ -1,11 +1,23 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
-import { Code, ExternalLink, Github, Users } from 'lucide-react';
+import {
+  CheckCircle,
+  Code,
+  Flame,
+  GitBranch,
+  Github,
+  Loader2,
+  Users,
+} from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 interface SharePageLoaderProps {
   type: 'profile' | 'repo';
@@ -14,282 +26,227 @@ interface SharePageLoaderProps {
 
 export default function SharePageLoader({ type, id }: SharePageLoaderProps) {
   const router = useRouter();
-  const [stage, setStage] = useState<'loading' | 'found' | 'redirecting'>(
-    'loading'
-  );
   const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    { label: 'Connecting to GitHub', icon: Github, status: 'loading' },
+    {
+      label: `Fetching ${type === 'profile' ? 'Profile' : 'Repository'} Data`,
+      icon: type === 'profile' ? Users : Code,
+      status: 'pending',
+    },
+    {
+      label:
+        type === 'profile'
+          ? 'Loading Repositories'
+          : 'Loading Repository Details',
+      icon: GitBranch,
+      status: 'pending',
+    },
+    { label: 'Preparing Rating Interface', icon: Flame, status: 'pending' },
+  ];
 
   useEffect(() => {
-    const timer1 = setTimeout(() => {
-      setStage('found');
-      setProgress(70);
-    }, 1500);
-
-    const timer2 = setTimeout(() => {
-      setStage('redirecting');
-      setProgress(100);
-    }, 2500);
-
-    const redirectTimer = setTimeout(() => {
-      // Redirect to main page with query parameters
-      router.push(`/?type=${type}&val=${encodeURIComponent(id)}`);
-    }, 3500);
-
-    // Simulate progress
-    const progressTimer = setInterval(() => {
+    const timer = setInterval(() => {
       setProgress(prev => {
-        if (prev < 30) return prev + Math.random() * 8;
-        if (prev < 60) return prev + Math.random() * 5;
-        if (prev < 90) return prev + Math.random() * 3;
-        return prev;
-      });
-    }, 150);
+        const newProgress = prev + 2;
+        const stepIndex = Math.floor(newProgress / 25);
+        setCurrentStep(stepIndex);
 
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(redirectTimer);
-      clearInterval(progressTimer);
-    };
+        if (newProgress >= 100) {
+          clearInterval(timer);
+          // Redirect after completion
+          setTimeout(() => {
+            router.push(`/?type=${type}&val=${encodeURIComponent(id)}`);
+          }, 1000);
+          return 100;
+        }
+        return newProgress;
+      });
+    }, 100);
+
+    return () => clearInterval(timer);
   }, [router, type, id]);
 
-  const getStageText = () => {
-    const itemType = type === 'profile' ? 'Profile' : 'Repository';
-    const decodedId = decodeURIComponent(id);
-    const displayName =
-      type === 'profile' ? decodedId : decodedId.split('/').pop();
-
-    switch (stage) {
-      case 'loading':
-        return {
-          title: `Finding ${itemType}`,
-          subtitle: `Searching for ${displayName} on GitHub...`,
-        };
-      case 'found':
-        return {
-          title: `${itemType} Found!`,
-          subtitle: `${displayName} is ready to be rated`,
-        };
-      case 'redirecting':
-        return {
-          title: 'Opening Commit King',
-          subtitle: 'Taking you to the rating page...',
-        };
-    }
+  const getStepStatus = (index: number) => {
+    if (index < currentStep) return 'completed';
+    if (index === currentStep) return 'loading';
+    return 'pending';
   };
 
-  const getIcon = () => {
-    switch (stage) {
-      case 'loading':
-        return Github;
-      case 'found':
-        return type === 'profile' ? Users : Code;
-      case 'redirecting':
-        return ExternalLink;
-    }
-  };
-
-  const stageText = getStageText();
-  const IconComponent = getIcon();
+  const decodedId = decodeURIComponent(id);
+  const displayName =
+    type === 'profile' ? decodedId : decodedId.split('/').pop();
+  const avatarFallback =
+    type === 'profile'
+      ? decodedId.slice(0, 2).toUpperCase()
+      : decodedId.split('/').pop()?.slice(0, 2).toUpperCase() || 'RE';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Main Content Card */}
-        <motion.div
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Icon Section */}
-          <div className="relative mb-8">
-            <motion.div
-              className="w-20 h-20 mx-auto bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center relative overflow-hidden"
-              animate={{
-                scale: stage === 'found' ? 1.1 : 1,
-                rotate: stage === 'loading' ? 360 : 0,
-              }}
-              transition={{
-                scale: { duration: 0.3 },
-                rotate: {
-                  duration: 2,
-                  repeat: stage === 'loading' ? Number.POSITIVE_INFINITY : 0,
-                  ease: 'linear',
-                },
-              }}
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={stage}
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0, rotate: 180 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <IconComponent className="w-10 h-10 text-white" />
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Animated ring */}
-              {stage === 'loading' && (
-                <motion.div
-                  className="absolute inset-0 border-4 border-transparent border-t-white/30 rounded-full"
-                  animate={{ rotate: 360 }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: 'linear',
-                  }}
-                />
-              )}
-            </motion.div>
-
-            {/* Floating particles for found state */}
-            {stage === 'found' && (
-              <div className="absolute inset-0 pointer-events-none">
-                {[...Array(8)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-1 h-1 bg-orange-400 rounded-full"
-                    style={{
-                      left: '50%',
-                      top: '50%',
-                    }}
-                    initial={{ scale: 0, x: 0, y: 0 }}
-                    animate={{
-                      scale: [0, 1, 0],
-                      x: Math.cos((i * 45 * Math.PI) / 180) * 50,
-                      y: Math.sin((i * 45 * Math.PI) / 180) * 50,
-                    }}
-                    transition={{
-                      duration: 0.8,
-                      delay: i * 0.05,
-                      ease: 'easeOut',
-                    }}
-                  />
-                ))}
-              </div>
-            )}
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo and Branding */}
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-12 h-12 relative">
+              <Image
+                src="/commit-kings-logo.png"
+                alt="CommitKings Logo"
+                width={48}
+                height={48}
+                className="rounded-xl"
+                priority
+              />
+            </div>
+            <h1 className="text-2xl font-bold text-white">CommitKings</h1>
           </div>
-
-          {/* Text Content */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={stage}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="mb-8"
-            >
-              <h1 className="text-2xl font-bold text-white mb-3">
-                {stageText.title}
-              </h1>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                {stageText.subtitle}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Progress Bar */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-gray-500">Loading Progress</span>
-              <span className="text-xs text-gray-400">
-                {Math.round(progress)}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-              />
-            </div>
-          </div>
-
-          {/* Status Indicators */}
-          <div className="flex justify-center space-x-6 text-xs">
-            <div className="flex items-center space-x-2">
-              <motion.div
-                className={`w-2 h-2 rounded-full ${stage === 'loading' ? 'bg-orange-500' : 'bg-green-500'}`}
-                animate={{ scale: stage === 'loading' ? [1, 1.2, 1] : 1 }}
-                transition={{
-                  duration: 1,
-                  repeat: stage === 'loading' ? Number.POSITIVE_INFINITY : 0,
-                }}
-              />
-              <span
-                className={
-                  stage === 'loading' ? 'text-orange-400' : 'text-green-400'
-                }
-              >
-                Search
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <motion.div
-                className={`w-2 h-2 rounded-full ${
-                  stage === 'found'
-                    ? 'bg-orange-500'
-                    : stage === 'redirecting'
-                      ? 'bg-green-500'
-                      : 'bg-gray-600'
-                }`}
-                animate={{ scale: stage === 'found' ? [1, 1.2, 1] : 1 }}
-                transition={{
-                  duration: 1,
-                  repeat: stage === 'found' ? Number.POSITIVE_INFINITY : 0,
-                }}
-              />
-              <span
-                className={
-                  stage === 'found'
-                    ? 'text-orange-400'
-                    : stage === 'redirecting'
-                      ? 'text-green-400'
-                      : 'text-gray-500'
-                }
-              >
-                Found
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <motion.div
-                className={`w-2 h-2 rounded-full ${stage === 'redirecting' ? 'bg-orange-500' : 'bg-gray-600'}`}
-                animate={{ scale: stage === 'redirecting' ? [1, 1.2, 1] : 1 }}
-                transition={{
-                  duration: 1,
-                  repeat:
-                    stage === 'redirecting' ? Number.POSITIVE_INFINITY : 0,
-                }}
-              />
-              <span
-                className={
-                  stage === 'redirecting' ? 'text-orange-400' : 'text-gray-500'
-                }
-              >
-                Rate
-              </span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Footer */}
-        <motion.div
-          className="text-center mt-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
-          <p className="text-gray-500 text-xs">
-            {type === 'profile'
-              ? '🔥 Ready to rate this developer?'
-              : '⭐ Ready to rate this repository?'}
+          <p className="text-slate-400 text-sm">
+            Preparing your GitHub rating experience for {displayName}...
           </p>
-        </motion.div>
+        </div>
+
+        {/* Profile/Repo Preview Card */}
+        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="relative">
+              <Avatar className="w-12 h-12 border-2 border-slate-600">
+                <AvatarImage
+                  src={
+                    progress > 50
+                      ? `https://github.com/${type === 'profile' ? decodedId : decodedId.split('/')[0]}.png?size=48`
+                      : undefined
+                  }
+                />
+                <AvatarFallback className="bg-slate-700 text-slate-300">
+                  {progress > 25 ? avatarFallback : '?'}
+                </AvatarFallback>
+              </Avatar>
+              {progress > 75 && (
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-3 h-3 text-white" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <div
+                className="h-4 bg-slate-700 rounded animate-pulse mb-2"
+                style={{ width: progress > 25 ? '60%' : '40%' }}
+              />
+              <div
+                className="h-3 bg-slate-700 rounded animate-pulse"
+                style={{ width: progress > 50 ? '40%' : '20%' }}
+              />
+            </div>
+          </div>
+
+          {progress > 60 && (
+            <div className="flex items-center space-x-4 text-sm text-slate-400">
+              {type === 'profile' ? (
+                <>
+                  <div className="flex items-center space-x-1">
+                    <Users className="w-4 h-4" />
+                    <span>followers</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <GitBranch className="w-4 h-4" />
+                    <span>repos</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center space-x-1">
+                    <Code className="w-4 h-4" />
+                    <span>repository</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <GitBranch className="w-4 h-4" />
+                    <span>branches</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Progress Bar */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-400">Loading Progress</span>
+            <span className="text-white font-medium">{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-2 bg-slate-800" />
+        </div>
+
+        {/* Loading Steps */}
+        <div className="space-y-3">
+          {steps.map((step, index) => {
+            const status = getStepStatus(index);
+            const StepIcon = step.icon;
+
+            return (
+              <div key={index} className="flex items-center space-x-3">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    status === 'completed'
+                      ? 'bg-green-500'
+                      : status === 'loading'
+                        ? 'bg-pink-500'
+                        : 'bg-slate-700'
+                  }`}
+                >
+                  {status === 'loading' ? (
+                    <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  ) : status === 'completed' ? (
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  ) : (
+                    <StepIcon className="w-4 h-4 text-slate-400" />
+                  )}
+                </div>
+                <span
+                  className={`text-sm ${
+                    status === 'completed'
+                      ? 'text-green-400'
+                      : status === 'loading'
+                        ? 'text-white'
+                        : 'text-slate-500'
+                  }`}
+                >
+                  {step.label}
+                </span>
+                {status === 'completed' && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-auto bg-green-500/20 text-green-400 border-green-500/30"
+                  >
+                    Done
+                  </Badge>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Ready State */}
+        {progress >= 100 && (
+          <div className="text-center space-y-4 animate-in fade-in duration-500">
+            <div className="flex items-center justify-center space-x-2 text-orange-400">
+              <Flame className="w-5 h-5" />
+              <span className="font-medium">
+                Ready to rate this{' '}
+                {type === 'profile' ? 'developer' : 'repository'}!
+              </span>
+            </div>
+            <div className="flex space-x-2 justify-center">
+              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                🔥 Hotty
+              </Badge>
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                🧊 Notty
+              </Badge>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
