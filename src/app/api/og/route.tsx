@@ -28,158 +28,266 @@ export async function GET(request: NextRequest) {
               width: '100%',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#0f172a',
-              padding: '60px',
+              backgroundColor: 'white',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
             }}
           >
+            {/* Card Container */}
             <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
-                marginBottom: '40px',
+                flexDirection: 'column',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                overflow: 'hidden',
               }}
             >
-              <img
-                src={profile.avatar_url}
-                alt={`${profile.login}'s avatar`}
-                width={120}
-                height={120}
+              {/* Header Section */}
+              <div
                 style={{
-                  borderRadius: '60px',
-                  border: '4px solid #374151',
-                  marginRight: '30px',
+                  display: 'flex',
+                  padding: '48px',
+                  borderBottom: '1px solid #e5e7eb',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flex: 1,
                 }}
-              />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              >
                 <div
                   style={{
-                    fontSize: '48px',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    marginBottom: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '32px',
                   }}
                 >
-                  {profile.login}
+                  <img
+                    src={profile.avatar_url}
+                    alt={`${profile.login}'s avatar`}
+                    width={120}
+                    height={120}
+                    style={{
+                      borderRadius: '60px',
+                      border: '2px solid #d1d5db',
+                    }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {profile.name ? (
+                      <div
+                        style={{
+                          fontSize: '48px',
+                          color: '#111827',
+                          marginBottom: '12px',
+                        }}
+                      >
+                        {profile.name}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          fontSize: '48px',
+                          fontWeight: 'bold',
+                          color: '#111827',
+                          marginBottom: '8px',
+                        }}
+                      >
+                        {profile.login}
+                      </div>
+                    )}
+                    {profile.bio && (
+                      <div
+                        style={{
+                          fontSize: '24px',
+                          color: '#6b7280',
+                          maxWidth: '600px',
+                          marginBottom: '16px',
+                        }}
+                      >
+                        {profile.bio.length > 100
+                          ? profile.bio.substring(0, 100) + '...'
+                          : profile.bio}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '32px',
+                        fontSize: '20px',
+                        color: '#6b7280',
+                      }}
+                    >
+                      {profile.location && (
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          📍 {profile.location}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        👥 {profile.followers.toLocaleString()} followers
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        📦 {profile.public_repos} repos
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* User Metrics Grid */}
+              <div
+                style={{
+                  display: 'flex',
+                  padding: '48px',
+                  gap: '24px',
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {/* Followers */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '32px',
+                    backgroundColor: '#eff6ff',
+                    borderRadius: '12px',
+                    minWidth: '180px',
+                    border: '1px solid #60a5fa',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '48px',
+                      fontWeight: 'bold',
+                      color: '#2563eb',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    👥 {profile.followers.toLocaleString()}
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '20px',
+                      color: '#6b7280',
+                    }}
+                  >
+                    Followers
+                  </div>
+                </div>
+
+                {/* Following */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '32px',
+                    backgroundColor: '#f0fdf4',
+                    borderRadius: '12px',
+                    minWidth: '180px',
+                    border: '1px solid #4ade80',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '48px',
+                      fontWeight: 'bold',
+                      color: '#16a34a',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    🤝 {profile.following.toLocaleString()}
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '20px',
+                      color: '#6b7280',
+                    }}
+                  >
+                    Following
+                  </div>
+                </div>
+
+                {/* Public Repositories */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '32px',
+                    backgroundColor: '#faf5ff',
+                    borderRadius: '12px',
+                    minWidth: '180px',
+                    border: '1px solid #c084fc',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '48px',
+                      fontWeight: 'bold',
+                      color: '#9333ea',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    � {profile.public_repos.toLocaleString()}
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '20px',
+                      color: '#6b7280',
+                    }}
+                  >
+                    Repositories
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Section */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '32px',
+                  backgroundColor: '#f9fafb',
+                  gap: '24px',
+                }}
+              >
+                <img
+                  src={`${request.nextUrl.origin}/web-app-manifest-512x512.png`}
+                  alt="Commit King Logo"
+                  width={48}
+                  height={48}
+                  style={{
+                    borderRadius: '8px',
+                  }}
+                />
+                <div
+                  style={{
+                    fontSize: '36px',
+                    fontWeight: 'bold',
+                    color: '#f59e0b',
+                  }}
+                >
+                  Commit King
                 </div>
                 <div
                   style={{
                     fontSize: '24px',
-                    color: '#d1d5db',
-                    marginBottom: '12px',
+                    color: '#6b7280',
                   }}
                 >
-                  {profile.name || 'GitHub Developer'}
+                  Rate 🔥 Hotty or 🧊 Notty
                 </div>
-                <div
-                  style={{
-                    fontSize: '18px',
-                    color: '#9ca3af',
-                    maxWidth: '500px',
-                  }}
-                >
-                  {profile.bio
-                    ? profile.bio.length > 80
-                      ? profile.bio.substring(0, 80) + '...'
-                      : profile.bio
-                    : 'Building amazing things on GitHub'}
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                gap: '40px',
-                marginBottom: '40px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  padding: '20px',
-                  backgroundColor: '#1e293b',
-                  borderRadius: '12px',
-                  minWidth: '120px',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    color: '#60a5fa',
-                    marginBottom: '8px',
-                  }}
-                >
-                  {profile.followers.toLocaleString()}
-                </div>
-                <div
-                  style={{
-                    fontSize: '14px',
-                    color: '#9ca3af',
-                  }}
-                >
-                  Followers
-                </div>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  padding: '20px',
-                  backgroundColor: '#1e293b',
-                  borderRadius: '12px',
-                  minWidth: '120px',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    color: '#34d399',
-                    marginBottom: '8px',
-                  }}
-                >
-                  {profile.public_repos.toLocaleString()}
-                </div>
-                <div
-                  style={{
-                    fontSize: '14px',
-                    color: '#9ca3af',
-                  }}
-                >
-                  Repositories
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '20px',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '32px',
-                  fontWeight: 'bold',
-                  color: '#f59e0b',
-                }}
-              >
-                Commit King
-              </div>
-              <div
-                style={{
-                  fontSize: '18px',
-                  color: '#9ca3af',
-                }}
-              >
-                Rate 🔥 Hotty or 🧊 Notty
               </div>
             </div>
           </div>
@@ -201,189 +309,271 @@ export async function GET(request: NextRequest) {
               width: '100%',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#0f172a',
-              padding: '60px',
+              backgroundColor: 'white',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
             }}
           >
+            {/* Card Container */}
             <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
-                marginBottom: '40px',
+                flexDirection: 'column',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                overflow: 'hidden',
               }}
             >
-              <img
-                src={repository.owner.avatar_url}
-                alt={`${repository.owner.login}'s avatar`}
-                width={120}
-                height={120}
+              {/* Header Section */}
+              <div
                 style={{
-                  borderRadius: '60px',
-                  border: '4px solid #374151',
-                  marginRight: '30px',
+                  display: 'flex',
+                  padding: '48px',
+                  borderBottom: '1px solid #e5e7eb',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                 }}
-              />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              >
                 <div
                   style={{
-                    fontSize: '48px',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    marginBottom: '8px',
-                    maxWidth: '600px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '32px',
                   }}
                 >
-                  {repository.name}
-                </div>
-                <div
-                  style={{
-                    fontSize: '20px',
-                    color: '#d1d5db',
-                    marginBottom: '12px',
-                  }}
-                >
-                  by {repository.owner.login}
-                </div>
-                <div
-                  style={{
-                    fontSize: '18px',
-                    color: '#9ca3af',
-                    maxWidth: '600px',
-                  }}
-                >
-                  {repository.description
-                    ? repository.description.length > 100
-                      ? repository.description.substring(0, 100) + '...'
-                      : repository.description
-                    : 'An amazing open source project'}
+                  <img
+                    src={repository.owner.avatar_url}
+                    alt={`${repository.owner.login}'s avatar`}
+                    width={120}
+                    height={120}
+                    style={{
+                      borderRadius: '60px',
+                      border: '2px solid #d1d5db',
+                    }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        fontSize: '40px',
+                        fontWeight: 'bold',
+                        color: '#111827',
+                        marginBottom: '8px',
+                        maxWidth: '600px',
+                      }}
+                    >
+                      {repository.full_name}
+                    </div>
+                    {repository.description && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          fontSize: '24px',
+                          color: '#6b7280',
+                          maxWidth: '600px',
+                        }}
+                      >
+                        {repository.description.length > 100
+                          ? repository.description.substring(0, 100) + '...'
+                          : repository.description}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div
-              style={{
-                display: 'flex',
-                gap: '40px',
-                marginBottom: '40px',
-              }}
-            >
+              {/* Repository Metrics Grid */}
               <div
                 style={{
                   display: 'flex',
-                  flexDirection: 'column',
+                  padding: '48px',
+                  gap: '24px',
+                  flex: 1,
                   alignItems: 'center',
-                  padding: '20px',
-                  backgroundColor: '#fef3c7',
-                  borderRadius: '12px',
-                  minWidth: '120px',
+                  justifyContent: 'center',
                 }}
               >
+                {/* Stars */}
                 <div
                   style={{
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    color: '#d97706',
-                    marginBottom: '8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '32px',
+                    backgroundColor: '#fefce8',
+                    borderRadius: '12px',
+                    minWidth: '180px',
+                    border: '1px solid #fde047',
                   }}
                 >
-                  ⭐ {repository.stargazers_count.toLocaleString()}
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '48px',
+                      fontWeight: 'bold',
+                      color: '#ca8a04',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    ⭐ {repository.stargazers_count.toLocaleString()}
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '20px',
+                      color: '#6b7280',
+                    }}
+                  >
+                    Stars
+                  </div>
                 </div>
-                <div
-                  style={{
-                    fontSize: '14px',
-                    color: '#92400e',
-                  }}
-                >
-                  Stars
-                </div>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  padding: '20px',
-                  backgroundColor: '#dbeafe',
-                  borderRadius: '12px',
-                  minWidth: '120px',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    color: '#2563eb',
-                    marginBottom: '8px',
-                  }}
-                >
-                  🍴 {repository.forks_count.toLocaleString()}
-                </div>
-                <div
-                  style={{
-                    fontSize: '14px',
-                    color: '#1e40af',
-                  }}
-                >
-                  Forks
-                </div>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  padding: '20px',
-                  backgroundColor: '#fecaca',
-                  borderRadius: '12px',
-                  minWidth: '120px',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    color: '#dc2626',
-                    marginBottom: '8px',
-                  }}
-                >
-                  🐛 {repository.open_issues_count.toLocaleString()}
-                </div>
-                <div
-                  style={{
-                    fontSize: '14px',
-                    color: '#991b1b',
-                  }}
-                >
-                  Issues
-                </div>
-              </div>
-            </div>
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '20px',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '32px',
-                  fontWeight: 'bold',
-                  color: '#f59e0b',
-                }}
-              >
-                Commit King
+                {/* Forks */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '32px',
+                    backgroundColor: '#eff6ff',
+                    borderRadius: '12px',
+                    minWidth: '180px',
+                    border: '1px solid #60a5fa',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '48px',
+                      fontWeight: 'bold',
+                      color: '#2563eb',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    🍴 {repository.forks_count.toLocaleString()}
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '20px',
+                      color: '#6b7280',
+                    }}
+                  >
+                    Forks
+                  </div>
+                </div>
+
+                {/* Issues */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '32px',
+                    backgroundColor: '#fef2f2',
+                    borderRadius: '12px',
+                    minWidth: '180px',
+                    border: '1px solid #f87171',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '48px',
+                      fontWeight: 'bold',
+                      color: '#dc2626',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    🐛 {repository.open_issues_count.toLocaleString()}
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '20px',
+                      color: '#6b7280',
+                    }}
+                  >
+                    Issues
+                  </div>
+                </div>
+
+                {/* Owner */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '32px',
+                    backgroundColor: '#faf5ff',
+                    borderRadius: '12px',
+                    minWidth: '180px',
+                    border: '1px solid #c084fc',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '48px',
+                      fontWeight: 'bold',
+                      color: '#9333ea',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    👥 {repository.owner.login.substring(0, 8)}
+                    {repository.owner.login.length > 8 ? '...' : ''}
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      fontSize: '20px',
+                      color: '#6b7280',
+                    }}
+                  >
+                    Owner
+                  </div>
+                </div>
               </div>
+
+              {/* Footer Section */}
               <div
                 style={{
-                  fontSize: '18px',
-                  color: '#9ca3af',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '32px',
+                  backgroundColor: '#f9fafb',
+                  gap: '24px',
                 }}
               >
-                Rate 🔥 Hotty or 🧊 Notty
+                <img
+                  src={`${request.nextUrl.origin}/web-app-manifest-512x512.png`}
+                  alt="Commit King Logo"
+                  width={48}
+                  height={48}
+                  style={{
+                    borderRadius: '8px',
+                  }}
+                />
+                <div
+                  style={{
+                    fontSize: '36px',
+                    fontWeight: 'bold',
+                    color: '#f59e0b',
+                  }}
+                >
+                  Commit King
+                </div>
+                <div
+                  style={{
+                    fontSize: '24px',
+                    color: '#6b7280',
+                  }}
+                >
+                  Rate 🔥 Hotty or 🧊 Notty
+                </div>
               </div>
             </div>
           </div>
