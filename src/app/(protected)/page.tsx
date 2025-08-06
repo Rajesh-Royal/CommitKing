@@ -3,8 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { SkipForward } from 'lucide-react';
 
-import { Suspense } from 'react';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import { useSearchParams } from 'next/navigation';
 
@@ -19,6 +18,7 @@ import { ProfileCardSkeleton, RepoCardSkeleton } from '@/components/skeletons';
 import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
 import { Button } from '@/components/ui/button';
 
+import { useAuthStatePreservation } from '@/hooks/useAuthStatePreservation';
 import { useGitHubErrorHandler } from '@/hooks/useGitHubErrorHandler';
 import { useItemQueue } from '@/hooks/useItemQueue';
 
@@ -42,19 +42,44 @@ function HomePageContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasLoadedFromParams, setHasLoadedFromParams] = useState(false);
+  const [hasCheckedAuthRestore, setHasCheckedAuthRestore] = useState(false);
+
+  const { restoreAfterAuth } = useAuthStatePreservation(currentItem);
 
   // Handle URL parameters on initial load or initialize queue
   useEffect(() => {
-    const type = searchParams.get('type') as 'profile' | 'repo' | null;
-    const val = searchParams.get('val');
+    if (!hasCheckedAuthRestore) {
+      setHasCheckedAuthRestore(true);
+      const restored = restoreAfterAuth();
+      if (!restored) {
+        // No restoration needed, proceed with normal initialization
+        const type = searchParams.get('type') as 'profile' | 'repo' | null;
+        const val = searchParams.get('val');
 
-    if (type && val && (type === 'profile' || type === 'repo')) {
-      setActiveTab(type);
-      setSpecificItem({ type, id: val });
-    } else {
-      initializeQueue();
+        if (
+          type &&
+          val &&
+          (type === 'profile' || type === 'repo') &&
+          !hasLoadedFromParams
+        ) {
+          setActiveTab(type);
+          setSpecificItem({ type, id: val });
+          setHasLoadedFromParams(true);
+        } else if (!hasLoadedFromParams) {
+          initializeQueue();
+          setHasLoadedFromParams(true);
+        }
+      }
     }
-  }, [searchParams, setSpecificItem, initializeQueue]);
+  }, [
+    hasCheckedAuthRestore,
+    restoreAfterAuth,
+    searchParams,
+    setSpecificItem,
+    initializeQueue,
+    hasLoadedFromParams,
+  ]);
 
   // Initialize queue when tab changes (but not on initial load if we have URL params)
   useEffect(() => {
@@ -118,6 +143,30 @@ function HomePageContent() {
     },
     enabled: currentItem?.type === 'profile',
   });
+
+  // Clear URL params after item is successfully loaded to enable normal queue operations
+  useEffect(() => {
+    if (hasLoadedFromParams && currentItem && !isTransitioning) {
+      // Check if we have successfully loaded data for the current item
+      const hasData = currentItem.type === 'profile' ? profileData : repoData;
+
+      if (hasData) {
+        // Clear params using window.history to avoid re-renders
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('type') || url.searchParams.has('val')) {
+          url.searchParams.delete('type');
+          url.searchParams.delete('val');
+          window.history.replaceState({}, '', url.pathname + url.search);
+        }
+      }
+    }
+  }, [
+    hasLoadedFromParams,
+    currentItem,
+    isTransitioning,
+    profileData,
+    repoData,
+  ]);
 
   const handleSearch = async (query: string, type: 'profile' | 'repo') => {
     setIsSearching(true);
